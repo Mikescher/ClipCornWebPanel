@@ -55,7 +55,7 @@ body {
 
 #root {
     background-color: #EEEEEE;
-    height: 100%;
+    min-height: 100%;
     width: 100%;
 }
 
@@ -143,11 +143,16 @@ body {
     grid-template-rows:    1fr auto;
 
     font-family: Arial, Helvetica, sans-serif;
+
+    margin-bottom: 8px;
+
+    position: relative;
 }
 
 .entry .coverbox {
     grid-column: 1;
     grid-row: 1 / span 2;
+    position: relative;
 }
 
 .entry .coverbox .cover {
@@ -160,9 +165,23 @@ body {
     image-rendering: smooth;
 }
 
+.entry .coverbox .viewed {
+    position: absolute;
+    top: -4px;
+    right: -12px;
+    margin: 0;
+}
+
+.entry .score {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    margin: 0;
+}
+
 .entry .text {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 1 / span 2;
 
     display: flex;
     flex-direction: row;
@@ -189,12 +208,21 @@ body {
 }
 
 .entry .info {
-    grid-column: 1 / span 3;
+    grid-column: 2 / span 2;
     grid-row: 2;
 
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
+    flex-wrap: wrap;
+
+    margin-bottom: -2px;
+    margin-top: -2px;
+}
+
+.entry .info > div {
+    margin-bottom: 2px;
+    margin-top: 2px;
 }
 
 .entry .info > div {
@@ -235,20 +263,20 @@ body {
 .icn {
     height: 16px;
     width: 16px;
-    margin-left: 3px;
+    margin-left: 6px;
     display: inline;
 }
 
-.lang-00 { background-image: url('/data/icons/language/language_00_16x16.png'); }
-.lang-01 { background-image: url('/data/icons/language/language_01_16x16.png'); }
-.lang-02 { background-image: url('/data/icons/language/language_02_16x16.png'); }
-.lang-03 { background-image: url('/data/icons/language/language_03_16x16.png'); }
-.lang-04 { background-image: url('/data/icons/language/language_04_16x16.png'); }
-.lang-05 { background-image: url('/data/icons/language/language_05_16x16.png'); }
-.lang-06 { background-image: url('/data/icons/language/language_06_16x16.png'); }
-.lang-07 { background-image: url('/data/icons/language/language_07_16x16.png'); }
-.lang-08 { background-image: url('/data/icons/language/language_08_16x16.png'); }
-.lang-09 { background-image: url('/data/icons/language/language_09_16x16.png'); }
+.lang-0  { background-image: url('/data/icons/language/language_00_16x16.png'); }
+.lang-1  { background-image: url('/data/icons/language/language_01_16x16.png'); }
+.lang-2  { background-image: url('/data/icons/language/language_02_16x16.png'); }
+.lang-3  { background-image: url('/data/icons/language/language_03_16x16.png'); }
+.lang-4  { background-image: url('/data/icons/language/language_04_16x16.png'); }
+.lang-5  { background-image: url('/data/icons/language/language_05_16x16.png'); }
+.lang-6  { background-image: url('/data/icons/language/language_06_16x16.png'); }
+.lang-7  { background-image: url('/data/icons/language/language_07_16x16.png'); }
+.lang-8  { background-image: url('/data/icons/language/language_08_16x16.png'); }
+.lang-9  { background-image: url('/data/icons/language/language_09_16x16.png'); }
 .lang-10 { background-image: url('/data/icons/language/language_10_16x16.png'); }
 .lang-11 { background-image: url('/data/icons/language/language_11_16x16.png'); }
 .lang-12 { background-image: url('/data/icons/language/language_12_16x16.png'); }
@@ -308,10 +336,14 @@ body {
 .tag-7  { background-image: url('/data/icons/tags/tag_7_on_16x16.png'); }
 .tag-8  { background-image: url('/data/icons/tags/tag_8_on_16x16.png'); }
 
+.viewed-1  { background-image: url('/data/icons/viewed/viewed_1.png');  width: 34px; }
+.viewed-4  { background-image: url('/data/icons/viewed/viewed_4.png');  width: 34px; }
 
-
-
-
-
-
+.score-0  { background-image: url('/data/icons/score/score_0_16x16.png'); }
+.score-1  { background-image: url('/data/icons/score/score_1_16x16.png'); }
+.score-2  { background-image: url('/data/icons/score/score_2_16x16.png'); }
+.score-3  { background-image: url('/data/icons/score/score_3_16x16.png'); }
+.score-4  { background-image: url('/data/icons/score/score_4_16x16.png'); }
+.score-5  { background-image: url('/data/icons/score/score_5_16x16.png'); }
+.score-6  { display: none; }
 
