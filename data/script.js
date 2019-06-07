@@ -7,6 +7,8 @@ let PAGE     = 0;
 
 let UNIQID   = 10000000;
 
+let FIRST = true;
+
 $(window).on('load', function()
 {
 	$.ajax({
@@ -101,7 +103,15 @@ function refresh()
 		if (take >= PAGESIZE) break;
 	}
 
-	if (LAZY_IMAGES) $('.lazy').lazy();
+	if (LAZY_IMAGES)
+	{
+		$('.lazy').lazy();
+	}
+	else if (FIRST)
+	{
+		FIRST = false;
+		setTimeout(function() { $('.delay').each(function (idx, img) { $(img).attr("src", $(img).data('src')); }); }, 1000);
+	}
 }
 
 function collapseSidebar(v)
@@ -141,7 +151,7 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 		let values2 = [];
 		for(let val of values)
 		{
-			values2.push( { html: '<i class="icn ' + icon + val + '"></i>', originalvalue: val } );
+			values2.push( { html: '<i class="icn ' + icon + val + '" title="'+val+'"></i>', originalvalue: val } );
 		}
 		values = values2;
 	}
@@ -282,54 +292,63 @@ function addMovieEntry(e)
 {
 	let html = '';
 
-	html += '<div class="entry">\r\n';
+	html += '<div class="entry">';
 	html += '<div class="coverbox">';
-	if (LAZY_IMAGES) html += '<img class="cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
-	else             html += '<img class="cover" src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
-	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
-	html += '</div>\r\n';
+	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
+	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
+	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
+	html += '</div>';
 
-	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>\r\n';
+	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
 
-	html += '<div class="text">\r\n';
+	html += '<div class="text">';
 	if (e['zykl'] !== '')
 	{
-		html += '<span class="zyklus">' + e['zykl'] + fmtZyklusNum(e['znum']) + '</span>\r\n';
-		html += '<span class="delim"> - </span>\r\n';
+		html += '<span class="zyklus">' + e['zykl'] + fmtZyklusNum(e['znum']) + '</span>';
+		html += '<span class="delim"> - </span>';
 	}
-	html += '<span class="title">' + e['name'] + '</span>\r\n';
-	html += '</div>\r\n';
+	html += '<span class="title">' + e['name'] + '</span>';
+	html += '</div>';
 
-	html += '<div class="icons">\r\n';
-	html += '<div class="language">\r\n';
+	html += '<div class="icons">';
+	html += '<div class="language">';
 	for (let lng of e['lng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
 	if (e['lng'].length === 0)  html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
-	html += '</div>\r\n';
-	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>\r\n';
-	html += '<div class="quality_fsk_format"><i class="icn quality-'+e['qal']+'" title="'+getQualityTitle(e['qal'])+'"></i><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i><i title="'+getFormatTitle(e['fmt'])+'" class="icn format-'+e['fmt']+'"></i></div>\r\n';
-	html += '<div class="tags">\r\n';
+	html += '</div>';
+	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
+	html += '<div class="quality_fsk_format"><i class="icn quality-'+e['qal']+'" title="'+getQualityTitle(e['qal'])+'"></i><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i><i title="'+getFormatTitle(e['fmt'])+'" class="icn format-'+e['fmt']+'"></i></div>';
+	html += '<div class="tags">';
 	for (let tag of e['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
-	html += '</div>\r\n';
-	html += '</div>\r\n';
+	html += '</div>';
+	html += '</div>';
 
 	html += '<div class="info">';
-	html += '<div class="genres"><div class="cap">Genres:</div>\r\n';
+
+	//html += '<div class="genres"><div class="cap">Genres:</div>';
+	//let f1 = false;
+	//for (let genre of e['gnr']) { if (f1) html+='&#183;'; html += '<span>'+getGenreTitle(genre)+'</span>'; f1=true; }
+	//html += '</div>';
+	html += '<div class="genres" title="';
 	let f1 = false;
-	for (let genre of e['gnr']) { if (f1) html+=' &#183; '; html += '<span>'+getGenreTitle(genre)+'</span>'; f1=true; }
-	html += '</div>\r\n';
+	for (let genre of e['gnr']) { if (f1) html+='\n'; html += getGenreTitle(genre); f1=true; }
+	html += '"><div class="cap">Genres:</div>' + e['gnr'].length;
+	html += '</div>';
+
 	if (e['grp'].length > 0)
 	{
-		html += '<div class="groups"><div class="cap">Groups:</div>\r\n';
+		html += '<div class="groups"><div class="cap">Groups:</div>';
 		let f2 = false;
-		for (let group of e['grp']) { if (f2) html+=' &#183; '; html += '<span>'+group+'</span>'; f2=true; }
-		html += '</div>\r\n';
+		for (let group of e['grp']) { if (f2) html+='&#183;'; html += '<span>'+group+'</span>'; f2=true; }
+		html += '</div>';
 	}
-	html += '<div class="length" title="'+formatLength(e['len'])+'"><div class="cap">Length:</div>'+e['len']+' min.</div>\r\n';
-	html += '<div class="size"><div class="cap">Size:</div>'+formatSize(e['siz'])+'</div>\r\n';
-	html += '<div class="year"><div class="cap">Year:</div>'+e['year']+'</div>\r\n';
-	html += '</div>\r\n';
+	html += '<div class="length" title="'+formatLength(e['len'])+'"><div class="cap">Length:</div>'+e['len']+' min.</div>';
+	html += '<div class="size"><div class="cap">Size:</div>'+formatSize(e['siz'])+'</div>';
+	html += '<div class="adddate"><div class="cap">Added:</div>'+e['add']+'</div>';
+	html += '<div class="year"><div class="cap">Year:</div>'+e['year']+'</div>';
+	html += '</div>';
 
-	html += '</div>\r\n';
+	html += '</div>';
 
 
 	$("#maintable").append(html);
@@ -339,43 +358,51 @@ function addSeriesEntry(e)
 {
 	let html = '';
 
-	html += '<div class="entry seriesentry">\r\n';
+	html += '<div class="entry seriesentry">';
 	html += '<div class="coverbox">';
-	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">\r\n';
-	if (LAZY_IMAGES) html += '<img class="cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
-	else             html += '<img class="cover" src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
-	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
-	html += '</div>\r\n';
+	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">';
+	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
+	html += '</div>';
 
-	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>\r\n';
+	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
 
-	html += '<div class="text">\r\n';
-	html += '<span class="title">' + e['name'] + '</span>\r\n';
-	html += '</div>\r\n';
+	html += '<div class="text">';
+	html += '<span class="title">' + e['name'] + '</span>';
+	html += '</div>';
 
-	html += '<div class="icons">\r\n';
-	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>\r\n';
-	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i></div>\r\n';
-	html += '<div class="tags">\r\n';
+	html += '<div class="icons">';
+	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
+	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i></div>';
+	html += '<div class="tags">';
 	for (let tag of e['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
-	html += '</div>\r\n';
-	html += '</div>\r\n';
+	html += '</div>';
+	html += '</div>';
 
 	html += '<div class="info">';
-	html += '<div class="genres"><div class="cap">Genres:</div>\r\n';
+
+	//html += '<div class="genres"><div class="cap">Genres:</div>';
+	//let f1 = false;
+	//for (let genre of e['gnr']) { if (f1) html+='&#183;'; html += '<span>'+getGenreTitle(genre)+'</span>'; f1=true; }
+	//html += '</div>';
+	html += '<div class="genres" title="';
 	let f1 = false;
-	for (let genre of e['gnr']) { if (f1) html+=' &#183; '; html += '<span>'+getGenreTitle(genre)+'</span>'; f1=true; }
-	html += '</div>\r\n';
+	for (let genre of e['gnr']) { if (f1) html+='\n'; html += getGenreTitle(genre); f1=true; }
+	html += '"><div class="cap">Genres:</div>' + e['gnr'].length;
+	html += '</div>';
+
 	if (e['grp'].length > 0)
 	{
-		html += '<div class="groups"><div class="cap">Groups:</div>\r\n';
+		html += '<div class="groups"><div class="cap">Groups:</div>';
 		let f2 = false;
-		for (let group of e['grp']) { if (f2) html+=' &#183; '; html += '<span>'+group+'</span>'; f2=true; }
-		html += '</div>\r\n';
+		for (let group of e['grp']) { if (f2) html+='&#183;'; html += '<span>'+group+'</span>'; f2=true; }
+		html += '</div>';
 	}
-	html += '</div>\r\n';
+	html += '</div>';
 
-	html += '</div>\r\n';
+	html += '</div>';
 
 
 	$("#maintable").append(html);

@@ -5,9 +5,9 @@ require_once (__DIR__ . '/../model/Base.php');
 $db = Database::connect();
 
 if (isset($_GET['limit']))
-	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS LIMIT " . $_GET['limit']);
+	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC LIMIT " . $_GET['limit']);
 else
-	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS");
+	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC");
 
 $json = [];
 
@@ -36,6 +36,7 @@ foreach ($data as $dat)
 		'qal'  => intval($dat['QUALITY']),
 		'tgs'  => Util::getBits(intval($dat['TAGS'])),
 		'gnr'  => Util::getGenres(longval($dat['GENRE'])),
+		'add'  => $dat['ADDDATE'],
 	];
 }
 

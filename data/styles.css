@@ -138,6 +138,8 @@ body {
     margin-bottom: 8px;
 
     position: relative;
+    /*! max-width: 100%; */
+    /*! overflow: hidden; */
 }
 
 .seriesentry {
@@ -158,6 +160,8 @@ body {
     /*image-rendering: pixelated;*/
     /*image-rendering: crisp-edges;*/
     image-rendering: smooth;
+
+    background: #444;
 }
 
 .entry .coverbox .coveroverlay {
@@ -197,6 +201,10 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .entry .text span {
@@ -251,7 +259,7 @@ body {
 }
 
 .entry .info span {
-    margin-right: 4px;
+    /*margin-right: 4px;*/
 }
 
 .entry .icons {
