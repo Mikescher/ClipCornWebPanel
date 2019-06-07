@@ -5,7 +5,7 @@ require_once (__DIR__ . '/../model/Base.php');
 $db = Database::connect();
 
 if (isset($_GET['limit']))
-	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC LIMIT " . $_GET['limit']);
+	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC LIMIT " . intval($_GET['limit']));
 else
 	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC");
 

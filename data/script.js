@@ -9,6 +9,8 @@ let UNIQID   = 10000000;
 
 let FIRST = true;
 
+let INPUT_EVENT = 999;
+
 $(window).on('load', function()
 {
 	$.ajax({
@@ -48,6 +50,32 @@ $(window).on('load', function()
 			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle, function (e, v) { return !e['ser'] && e['lng'].includes(v); });
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
 			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'}, function (e, v) { return !e['ser'] && e['vwd'] === (v===1); });
+
+			$('#filter').on('input', function()
+			{
+				let eid = ++INPUT_EVENT;
+				let v = $(this).val();
+
+				setTimeout(function ()
+				{
+					if (INPUT_EVENT !== eid) return;
+
+					FILTER = function(e)
+					{
+						if (v === '') return true;
+						if (e['name'].toLowerCase().includes(v.toLowerCase())) return true;
+						if (e['zykl'].toLowerCase().includes(v.toLowerCase())) return true;
+						for (let g of e['grp']) if (g.toLowerCase().includes(v.toLowerCase())) return true;
+						for (let g of e['tgs']) if (getTagTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
+						for (let g of e['gnr']) if (getGenreTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
+						return false;
+					};
+					PAGE=0;
+					refresh();
+
+				}, 500);
+
+			});
 
 			return data;
 		}

@@ -4,7 +4,7 @@ require_once (__DIR__ . '/../model/Base.php');
 
 $db = Database::connect();
 
-$dbresult = $db->sql_query_single("SELECT PREVIEW FROM COVERS WHERE ID=".$_GET['cid'])['PREVIEW'];
+$dbresult = $db->sql_query_single("SELECT PREVIEW FROM COVERS WHERE ID=".intval($_GET['cid']))['PREVIEW'];
 
 $data = unpack('C*', $dbresult);
 
