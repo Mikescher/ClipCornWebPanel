@@ -35,6 +35,8 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'});
 			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'});
 
+			$('.lazy').lazy();
+
 			return data;
 		}
 	});
@@ -53,21 +55,23 @@ $(window).on('load', function()
 	$("#sb_B").click(function () { collapseSidebar(0xB); });
 
 	collapseSidebar(0);
+
+
 });
 
 function collapseSidebar(v) {
-	if (v !== 0x0) $("#sc_0").css('visibility', 'collapse'); else $("#sc_0").css('visibility', 'visible');
-	if (v !== 0x1) $("#sc_1").css('visibility', 'collapse'); else $("#sc_1").css('visibility', 'visible');
-	if (v !== 0x2) $("#sc_2").css('visibility', 'collapse'); else $("#sc_2").css('visibility', 'visible');
-	if (v !== 0x3) $("#sc_3").css('visibility', 'collapse'); else $("#sc_3").css('visibility', 'visible');
-	if (v !== 0x4) $("#sc_4").css('visibility', 'collapse'); else $("#sc_4").css('visibility', 'visible');
-	if (v !== 0x5) $("#sc_5").css('visibility', 'collapse'); else $("#sc_5").css('visibility', 'visible');
-	if (v !== 0x6) $("#sc_6").css('visibility', 'collapse'); else $("#sc_6").css('visibility', 'visible');
-	if (v !== 0x7) $("#sc_7").css('visibility', 'collapse'); else $("#sc_7").css('visibility', 'visible');
-	if (v !== 0x8) $("#sc_8").css('visibility', 'collapse'); else $("#sc_8").css('visibility', 'visible');
-	if (v !== 0x9) $("#sc_9").css('visibility', 'collapse'); else $("#sc_9").css('visibility', 'visible');
-	if (v !== 0xA) $("#sc_A").css('visibility', 'collapse'); else $("#sc_A").css('visibility', 'visible');
-	if (v !== 0xB) $("#sc_B").css('visibility', 'collapse'); else $("#sc_B").css('visibility', 'visible');
+	if (v !== 0x0) $("#sc_0").css('visibility', 'collapse').css('display', 'none'); else $("#sc_0").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x1) $("#sc_1").css('visibility', 'collapse').css('display', 'none'); else $("#sc_1").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x2) $("#sc_2").css('visibility', 'collapse').css('display', 'none'); else $("#sc_2").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x3) $("#sc_3").css('visibility', 'collapse').css('display', 'none'); else $("#sc_3").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x4) $("#sc_4").css('visibility', 'collapse').css('display', 'none'); else $("#sc_4").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x5) $("#sc_5").css('visibility', 'collapse').css('display', 'none'); else $("#sc_5").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x6) $("#sc_6").css('visibility', 'collapse').css('display', 'none'); else $("#sc_6").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x7) $("#sc_7").css('visibility', 'collapse').css('display', 'none'); else $("#sc_7").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x8) $("#sc_8").css('visibility', 'collapse').css('display', 'none'); else $("#sc_8").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0x9) $("#sc_9").css('visibility', 'collapse').css('display', 'none'); else $("#sc_9").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0xA) $("#sc_A").css('visibility', 'collapse').css('display', 'none'); else $("#sc_A").css('visibility', 'visible').css('display', 'flex');;
+	if (v !== 0xB) $("#sc_B").css('visibility', 'collapse').css('display', 'none'); else $("#sc_B").css('visibility', 'visible').css('display', 'flex');;
 }
 
 
@@ -220,7 +224,7 @@ function addMovieEntry(e)
 
 	html += '<div class="entry">\r\n';
 	html += '<div class="coverbox">';
-	html += '<img class="cover" src="https://via.placeholder.com/24x33/000000/FFFFFF" alt="Cover">\r\n';
+	html += '<img class="lazy cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
 	html += '</div>\r\n';
 
@@ -277,7 +281,7 @@ function addSeriesEntry(e)
 	html += '<div class="entry seriesentry">\r\n';
 	html += '<div class="coverbox">';
 	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">\r\n';
-	html += '<img class="cover" src="https://via.placeholder.com/24x33/000000/FFFFFF" alt="Cover">\r\n';
+	html += '<img class="lazy cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
 	html += '</div>\r\n';
 

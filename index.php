@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/data/styles-icons.css"/>
     <link rel="stylesheet" href="/data/styles-ext.css"/>
 </head>
-<body onload="script();">
+<body>
 
 	<div id="root">
 
@@ -60,6 +60,7 @@
 
     <script src="/data/jquery-3.4.1.js" type="text/javascript" ></script>
     <script src="/data/script.js" type="text/javascript" ></script>
+    <script src="/data/jquery.lazy.min.js" type="text/javascript" ></script>
 
 </body>
 </html>

@@ -26,4 +26,19 @@ class Database
 		return $this->PDO->query($query)->fetchAll(PDO::FETCH_ASSOC);
 	}
 
+	public function sql_query_single($query)
+	{
+		return $this->PDO->query($query)->fetchAll(PDO::FETCH_ASSOC)[0];
+	}
+
+	public function sql_query_blob($query)
+	{
+		$query = $this->PDO->prepare($query);
+		$query->execute([]);
+
+		$query->bindColumn(1, $image, PDO::PARAM_LOB);
+		$query->fetch(PDO::FETCH_BOUND);
+		return $image;
+	}
+
 }

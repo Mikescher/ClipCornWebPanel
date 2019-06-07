@@ -154,8 +154,7 @@ body {
 .entry .coverbox .cover {
     display: block;
     height: 96px;
-    min-width: 70px;
-    width: auto;
+    width: 70px;
     /*image-rendering: pixelated;*/
     /*image-rendering: crisp-edges;*/
     image-rendering: smooth;
