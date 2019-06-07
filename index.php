@@ -52,7 +52,15 @@
                 <!-- AJAX -->
                 <div id="rippleloader" class="lds-ripple"><div></div><div></div></div>
 
-			</div>
+            </div>
+
+            <div id="footer">
+
+                <a href="#" id="prevpage">Previous page</a>
+                <!-- AJAX -->
+                <a href="#" id="nextpage">Next page</a>
+
+            </div>
 
 		</div>
 

@@ -1,3 +1,12 @@
+const PAGESIZE = 128;
+const LAZY_IMAGES = false;
+
+let ALL_DATA = null;
+let FILTER   = null;
+let PAGE     = 0;
+
+let UNIQID   = 10000000;
+
 $(window).on('load', function()
 {
 	$.ajax({
@@ -13,35 +22,46 @@ $(window).on('load', function()
 
 			for (let e of json)
 			{
-				if (e['ser']) addSeriesEntry(e);
-				else          addMovieEntry(e);
-
 				for (let vvv of e['grp']) if (!groups.includes(vvv)) groups.push(vvv);
 				for (let vvv of e['gnr']) if (!genres.includes(vvv)) genres.push(vvv);
 				for (let vvv of e['lng']) if (!langs.includes(vvv))  langs.push(vvv);
 			}
 
+			ALL_DATA = json;
+			FILTER = null;
+			PAGE = 0;
+			refresh();
+
 			$('#rippleloader').remove();
+			$("#footer").css('display', 'block');
 
-			setSidebarValues(false, groups, true, $('#sc_1'), null, null);
-			setSidebarValues(false, genres, false, $('#sc_2'), null, getGenreTitle);
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null);
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6], false, $('#sc_4'), 'score-', getScoreTitle);
-			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle);
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_6'), 'format-', getFormatTitle);
-			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_7'), 'fsk-', getQualityTitle);
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_8'), 'tag-', getTagTitle);
-			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle);
-			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'});
-			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'});
-
-			$('.lazy').lazy();
+			setSidebarValues(false, groups, true, $('#sc_1'), null, null, function (e, v) { return e['grp'].includes(v); });
+			setSidebarValues(false, genres, false, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
+			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null, function (e, v) { return e['oscr'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle, function (e, v) { return e['fsk'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_6'), 'format-', getFormatTitle, function (e, v) { return !e['ser'] && e['fmt'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_7'), 'fsk-', getQualityTitle, function (e, v) { return !e['ser'] && e['qal'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_8'), 'tag-', getTagTitle, function (e, v) { return e['tgs'].includes(v); });
+			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle, function (e, v) { return !e['ser'] && e['lng'].includes(v); });
+			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
+			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'}, function (e, v) { return !e['ser'] && e['vwd'] === (v===1); });
 
 			return data;
 		}
 	});
 
-	$("#sb_0").click(function () { collapseSidebar(0x0); });
+	$("#prevpage").click(function () {
+		PAGE = PAGE-1;
+		refresh();
+	});
+
+	$("#nextpage").click(function () {
+		PAGE = PAGE+1;
+		refresh();
+	});
+
+	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; PAGE=0; refresh(); });
 	$("#sb_1").click(function () { collapseSidebar(0x1); });
 	$("#sb_2").click(function () { collapseSidebar(0x2); });
 	$("#sb_3").click(function () { collapseSidebar(0x3); });
@@ -55,27 +75,52 @@ $(window).on('load', function()
 	$("#sb_B").click(function () { collapseSidebar(0xB); });
 
 	collapseSidebar(0);
-
-
 });
 
-function collapseSidebar(v) {
-	if (v !== 0x0) $("#sc_0").css('visibility', 'collapse').css('display', 'none'); else $("#sc_0").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x1) $("#sc_1").css('visibility', 'collapse').css('display', 'none'); else $("#sc_1").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x2) $("#sc_2").css('visibility', 'collapse').css('display', 'none'); else $("#sc_2").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x3) $("#sc_3").css('visibility', 'collapse').css('display', 'none'); else $("#sc_3").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x4) $("#sc_4").css('visibility', 'collapse').css('display', 'none'); else $("#sc_4").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x5) $("#sc_5").css('visibility', 'collapse').css('display', 'none'); else $("#sc_5").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x6) $("#sc_6").css('visibility', 'collapse').css('display', 'none'); else $("#sc_6").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x7) $("#sc_7").css('visibility', 'collapse').css('display', 'none'); else $("#sc_7").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x8) $("#sc_8").css('visibility', 'collapse').css('display', 'none'); else $("#sc_8").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0x9) $("#sc_9").css('visibility', 'collapse').css('display', 'none'); else $("#sc_9").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0xA) $("#sc_A").css('visibility', 'collapse').css('display', 'none'); else $("#sc_A").css('visibility', 'visible').css('display', 'flex');;
-	if (v !== 0xB) $("#sc_B").css('visibility', 'collapse').css('display', 'none'); else $("#sc_B").css('visibility', 'visible').css('display', 'flex');;
+function refresh()
+{
+	$("#maintable").empty();
+
+	if (ALL_DATA === null) return;
+
+	$("#prevpage").css('visibility', (PAGE>0) ? 'visible' : 'hidden');
+	$("#nextpage").css('visibility', ((PAGE+1)*PAGESIZE < ALL_DATA.length) ? 'visible' : 'hidden');
+
+	let skip=0;
+	let take=0;
+	for (let e of ALL_DATA)
+	{
+		if (FILTER !== null && !FILTER(e)) continue;
+
+		if (skip < PAGE*PAGESIZE) { skip++; continue; }
+
+		if (e['ser']) addSeriesEntry(e);
+		else          addMovieEntry(e);
+
+		take++;
+		if (take >= PAGESIZE) break;
+	}
+
+	if (LAZY_IMAGES) $('.lazy').lazy();
 }
 
+function collapseSidebar(v)
+{
+	if (v !== 0x0) $("#sc_0").css('visibility', 'collapse').css('display', 'none'); else $("#sc_0").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x1) $("#sc_1").css('visibility', 'collapse').css('display', 'none'); else $("#sc_1").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x2) $("#sc_2").css('visibility', 'collapse').css('display', 'none'); else $("#sc_2").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x3) $("#sc_3").css('visibility', 'collapse').css('display', 'none'); else $("#sc_3").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x4) $("#sc_4").css('visibility', 'collapse').css('display', 'none'); else $("#sc_4").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x5) $("#sc_5").css('visibility', 'collapse').css('display', 'none'); else $("#sc_5").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x6) $("#sc_6").css('visibility', 'collapse').css('display', 'none'); else $("#sc_6").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x7) $("#sc_7").css('visibility', 'collapse').css('display', 'none'); else $("#sc_7").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x8) $("#sc_8").css('visibility', 'collapse').css('display', 'none'); else $("#sc_8").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0x9) $("#sc_9").css('visibility', 'collapse').css('display', 'none'); else $("#sc_9").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0xA) $("#sc_A").css('visibility', 'collapse').css('display', 'none'); else $("#sc_A").css('visibility', 'visible').css('display', 'flex');
+	if (v !== 0xB) $("#sc_B").css('visibility', 'collapse').css('display', 'none'); else $("#sc_B").css('visibility', 'visible').css('display', 'flex');
+}
 
-function setSidebarValues(presorted, values, sorted, target, icon, txtconvert)
+function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, filter)
 {
 	if (presorted) values.sort();
 
@@ -87,7 +132,7 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert)
 			let txt = txtconvert(val);
 			let icn = '';
 			if (icon !== null) icn = '<i class="icn ' + icon + val + '"></i>';
-			values2.push(icn + txt);
+			values2.push( { html: icn + txt, originalvalue: val } );
 		}
 		values = values2;
 	}
@@ -96,7 +141,16 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert)
 		let values2 = [];
 		for(let val of values)
 		{
-			values2.push('<i class="icn ' + icon + val + '"></i>');
+			values2.push( { html: '<i class="icn ' + icon + val + '"></i>', originalvalue: val } );
+		}
+		values = values2;
+	}
+	else
+	{
+		let values2 = [];
+		for(let val of values)
+		{
+			values2.push( { html: val, originalvalue: val } );
 		}
 		values = values2;
 	}
@@ -105,12 +159,18 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert)
 
 	let html = '';
 
+	let ff = [];
+
 	for(let val of values)
 	{
-		html += '<a href="#" class="sidebar-level-2">'+val+'</a>';
+		let id = '___' + (UNIQID++) + '___';
+		html += '<a href="#" class="sidebar-level-2" id="'+id+'">'+val.html+'</a>';
+		if (filter !== null) ff.push({xid: "#"+id, fn: function () { FILTER =function(e){ return filter(e, val.originalvalue); }; PAGE=0; refresh();} });
 	}
 
-	target.append(html)
+	target.append(html);
+
+	for(let f of ff) $(f.xid).click(f.fn);
 }
 
 function fmtZyklusNum(num)
@@ -224,7 +284,8 @@ function addMovieEntry(e)
 
 	html += '<div class="entry">\r\n';
 	html += '<div class="coverbox">';
-	html += '<img class="lazy cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
+	if (LAZY_IMAGES) html += '<img class="cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
+	else             html += '<img class="cover" src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
 	html += '</div>\r\n';
 
@@ -281,7 +342,8 @@ function addSeriesEntry(e)
 	html += '<div class="entry seriesentry">\r\n';
 	html += '<div class="coverbox">';
 	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">\r\n';
-	html += '<img class="lazy cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
+	if (LAZY_IMAGES) html += '<img class="cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
+	else             html += '<img class="cover" src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">\r\n';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>\r\n';
 	html += '</div>\r\n';
 

@@ -60,7 +60,7 @@ body {
 }
 
 #content {
-    margin-left: 200px;
+    margin-left: 250px;
 
     min-height: 100vh;
     width: auto;
@@ -345,11 +345,44 @@ body {
 }
 
 .lds-ripple {
-    left: 50%;
-    top: 50%;
     left: calc(50% - 128px);
     top: calc(50% - 128px);
 }
 
+
+#footer {
+    display: none;
+
+    padding: 8px;
+
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+
+    max-width: 1250px;
+}
+
+#footer a {
+    color: #FFF;
+    background-color: #44F;
+    padding: 6px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 24pt;
+    margin-bottom: 48px;
+}
+
+#footer a:hover {
+    color: #FFF;
+    background-color: #00B;
+}
+
+#footer #prevpage {
+    float: left;
+}
+
+#footer #nextpage {
+    float: right;
+}
 
 
