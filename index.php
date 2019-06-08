@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8">
-	<title>jClipCorn - Web panel</title>
+	<title>jClipCorn - Webview</title>
 	<link rel="icon" type="image/png" href="/data/icon.png"/>
     <link rel="stylesheet" href="/data/styles.css"/>
     <link rel="stylesheet" href="/data/styles-icons.css"/>
