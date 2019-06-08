@@ -63,6 +63,10 @@ foreach ($data as $dat)
 		else if ( $vtrue && !$vfalse) $jdat['svwd'] = 1;
 		else if ( $vtrue &&  $vfalse) $jdat['svwd'] = 4;
 		else if (!$vtrue && !$vfalse) $jdat['svwd'] = 0;
+
+		$slng = [];
+		foreach ($episodes as $xep) foreach (Util::getBits(intval($xep['LANGUAGE'])) as $lng)  if (!in_array($lng, $slng)) $slng []= $lng;
+		$jdat['slng'] = $slng;
 	}
 
 	$json []= $jdat;

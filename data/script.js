@@ -89,7 +89,7 @@ $(window).on('load', function()
 		refresh();
 	});
 
-	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); });
+	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); $('#filter').val(''); });
 	$("#sb_1").click(function () { collapseSidebar(0x1); });
 	$("#sb_2").click(function () { collapseSidebar(0x2); });
 	$("#sb_3").click(function () { collapseSidebar(0x3); });
@@ -434,6 +434,10 @@ function addSeriesEntry(e)
 	html += '</div>';
 
 	html += '<div class="icons">';
+	html += '<div class="language">';
+	for (let lng of e['slng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
+	if (e['slng'].length === 0)  html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
+	html += '</div>';
 	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
 	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i></div>';
 	html += '<div class="tags">';
