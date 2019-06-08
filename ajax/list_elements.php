@@ -54,6 +54,15 @@ foreach ($data as $dat)
 		$jdat['ssiz'] = array_sum(array_map(function ($a){ return $a['FILESIZE']; }, $episodes));
 
 		$jdat['syer'] = min(array_map(function ($a){ return $a['SYEAR']; }, $episodes)) . ' - ' . max(array_map(function ($a){ return $a['SYEAR']; }, $episodes));
+
+		$vtrue  = false;
+		$vfalse = false;
+		foreach ($episodes as $e) if ($e['VIEWED']==='1') $vtrue=true;
+		foreach ($episodes as $e) if ($e['VIEWED']==='0') $vfalse=true;
+		     if (!$vtrue &&  $vfalse) $jdat['svwd'] = 0;
+		else if ( $vtrue && !$vfalse) $jdat['svwd'] = 1;
+		else if ( $vtrue &&  $vfalse) $jdat['svwd'] = 4;
+		else if (!$vtrue && !$vfalse) $jdat['svwd'] = 0;
 	}
 
 	$json []= $jdat;

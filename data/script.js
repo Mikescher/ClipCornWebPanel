@@ -52,7 +52,7 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_8'), 'tag-', getTagTitle, function (e, v) { return e['tgs'].includes(v); });
 			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle, function (e, v) { return !e['ser'] && e['lng'].includes(v); });
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
-			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'}, function (e, v) { return !e['ser'] && e['vwd'] === (v===1); });
+			setSidebarValues(false, [0, 4, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':((i===0)?'Not viewed':'Partially viewed\'Viewed\':');}, function (e, v) { return (!e['ser'] && e['vwd'] && v===1) || (!e['ser'] && !e['vwd'] && v===0) ||(e['ser'] && e['svwd']===v); });
 
 			let compFilter = $('#filter');
 
@@ -349,7 +349,12 @@ function addMovieEntry(e)
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
-	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
+	if (e['vwd'])
+	{
+		html += '<i class="viewed icn viewed-1" title="';
+		for (let h of e['his']) html += h;
+		html += '"></i>';
+	}
 	html += '</div>';
 
 	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
@@ -418,7 +423,8 @@ function addSeriesEntry(e)
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
-	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
+	if (e['svwd']===1) html += '<i class="viewed icn viewed-1"></i>';
+	if (e['svwd']===4) html += '<i class="viewed icn viewed-4"></i>';
 	html += '</div>';
 
 	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';

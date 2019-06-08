@@ -78,12 +78,12 @@
 .tag-8  { background-image: url('/data/icons/tags/tag_8_on_16x16.png'); }
 
 .viewed-0  { visibility: hidden; width: 34px; }
-.viewed-1  { background-image: url('/data/icons/viewed/viewed_1.png');  width: 34px; }
-.viewed-4  { background-image: url('/data/icons/viewed/viewed_4.png');  width: 34px; }
+.viewed-1  { background-image: url('/data/icons/viewed/viewed_1.png'); width: 34px; }
+.viewed-4  { background-image: url('/data/icons/viewed/viewed_4.png'); width: 34px; }
 
 .view-0  { background-image: url('/data/icons/viewed/sb_0_16x16.png'); }
 .view-1  { background-image: url('/data/icons/viewed/sb_1_16x16.png'); }
-.view-2  { background-image: url('/data/icons/viewed/sb_1_16x16.png'); }
+.view-4  { background-image: url('/data/icons/viewed/sb_4_16x16.png'); }
 
 .score-0  { background-image: url('/data/icons/score/score_0_16x16.png'); }
 .score-1  { background-image: url('/data/icons/score/score_1_16x16.png'); }
