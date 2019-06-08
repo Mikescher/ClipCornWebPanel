@@ -111,13 +111,13 @@ function refresh()
 
 	if (ALL_DATA === null) return;
 
-	$("#prevpage").css('visibility', (PAGE>0) ? 'visible' : 'hidden');
-	$("#nextpage").css('visibility', ((PAGE+1)*PAGESIZE < ALL_DATA.length) ? 'visible' : 'hidden');
-
 	let skip=0;
 	let take=0;
+	let isnext = false;
 	for (let e of ALL_DATA)
 	{
+		if (take >= PAGESIZE) { isnext=true; break; }
+
 		if (FILTER !== null && !FILTER(e)) continue;
 
 		if (skip < PAGE*PAGESIZE) { skip++; continue; }
@@ -126,8 +126,10 @@ function refresh()
 		else          addMovieEntry(e);
 
 		take++;
-		if (take >= PAGESIZE) break;
 	}
+
+	$("#prevpage").css('visibility', (PAGE>0) ? 'visible' : 'hidden');
+	$("#nextpage").css('visibility', (isnext) ? 'visible' : 'hidden');
 
 	$(".sidebar-level-1").removeClass('selected');
 	$(".sidebar-level-2").removeClass('selected');
@@ -412,9 +414,9 @@ function addSeriesEntry(e)
 	html += '<div class="entry seriesentry">';
 	html += '<div class="coverbox">';
 	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">';
-	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
-	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
-	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
+	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
+	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
 	html += '</div>';
 
@@ -535,6 +537,7 @@ function preload()
 	imgpreload('/data/icons/score/score_5_16x16.png');
 	imgpreload('/data/icons/type/t0_16x16.png');
 	imgpreload('/data/icons/type/t1_16x16.png');
+	imgpreload('/data/mask_series.png');
 }
 
 function imgpreload(url)
