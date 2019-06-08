@@ -43,7 +43,7 @@ $(window).on('load', function()
 			$("#footer").css('display', 'block');
 
 			setSidebarValues(false, groups, true, $('#sc_1'), null, null, function (e, v) { return e['grp'].includes(v); });
-			setSidebarValues(false, genres, false, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
+			setSidebarValues(false, genres, true, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null, function (e, v) { return e['oscr'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle, function (e, v) { return e['fsk'] === v; });
@@ -176,7 +176,7 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 			let txt = txtconvert(val);
 			let icn = '';
 			if (icon !== null) icn = '<i class="icn ' + icon + val + '"></i>';
-			values2.push( { html: icn + txt, originalvalue: val } );
+			values2.push( { html: icn + txt, originalvalue: val, textval: txt } );
 		}
 		values = values2;
 	}
@@ -185,7 +185,7 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 		let values2 = [];
 		for(let val of values)
 		{
-			values2.push( { html: '<i class="icn ' + icon + val + '" title="'+val+'"></i>', originalvalue: val } );
+			values2.push( { html: '<i class="icn ' + icon + val + '" title="'+val+'"></i>', originalvalue: val, textval: val  } );
 		}
 		values = values2;
 	}
@@ -194,12 +194,12 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 		let values2 = [];
 		for(let val of values)
 		{
-			values2.push( { html: val, originalvalue: val } );
+			values2.push( { html: val, originalvalue: val, textval: val } );
 		}
 		values = values2;
 	}
 
-	if (sorted) values.sort();
+	if (sorted) values.sort(function (a, b) { return a.textval.localeCompare(b.textval); });
 
 	let html = '';
 
@@ -390,9 +390,10 @@ function addMovieEntry(e)
 
 	if (e['grp'].length > 0)
 	{
-		html += '<div class="groups"><div class="cap">Groups:</div>';
+		html += '<div class="groups" title="';
 		let f2 = false;
-		for (let group of e['grp']) { if (f2) html+='&#183;'; html += '<span>'+group+'</span>'; f2=true; }
+		for (let group of e['grp']) { if (f2) html+='\n'; html += group; f2=true; }
+		html += '"><div class="cap">Groups:</div>' + e['grp'].length;
 		html += '</div>';
 	}
 	html += '<div class="length" title="'+formatLength(e['len'])+'"><div class="cap">Length:</div>'+e['len']+' min.</div>';
@@ -448,11 +449,17 @@ function addSeriesEntry(e)
 
 	if (e['grp'].length > 0)
 	{
-		html += '<div class="groups"><div class="cap">Groups:</div>';
+		html += '<div class="groups" title="';
 		let f2 = false;
-		for (let group of e['grp']) { if (f2) html+='&#183;'; html += '<span>'+group+'</span>'; f2=true; }
+		for (let group of e['grp']) { if (f2) html+='\n'; html += group; f2=true; }
+		html += '"><div class="cap">Groups:</div>' + e['grp'].length;
 		html += '</div>';
 	}
+	html += '<div class="length" title="'+formatLength(e['slen'])+'"><div class="cap">Length:</div>'+e['slen']+' min.</div>';
+	html += '<div class="size"><div class="cap">Size:</div>'+formatSize(e['ssiz'])+'</div>';
+	html += '<div class="adddate"><div class="cap">Added:</div>'+e['sadd']+'</div>';
+	html += '<div class="episodecount"><div class="cap">Episodes:</div>'+e['sepc']+'</div>';
+	html += '<div class="year"><div class="cap">Year:</div>'+e['syer']+'</div>';
 	html += '</div>';
 
 	html += '</div>';

@@ -13,7 +13,7 @@ $json = [];
 
 foreach ($data as $dat)
 {
-	$json []=
+	$jdat =
 	[
 		'id'   => intval($dat['LOCALID']),
 		'sid'  => intval($dat['SERIESID']),
@@ -38,7 +38,28 @@ foreach ($data as $dat)
 		'gnr'  => Util::getGenres(longval($dat['GENRE'])),
 		'add'  => $dat['ADDDATE'],
 	];
+
+	if ($dat['TYPE']=='1')
+	{
+		$episodes = $db->sql_query_assoc("SELECT SEASONS.SEASONID AS tmp1,SEASONS.SERIESID AS tmp2,SEASONS.SEASONYEAR AS SYEAR,EPISODES.* FROM SEASONS INNER JOIN EPISODES ON SEASONS.SEASONID=EPISODES.SEASONID WHERE tmp2=".$dat['SERIESID']);
+
+		$jdat['sepc'] = count($episodes);
+
+		$add = array_map(function ($a){ return $a['ADDDATE']; }, $episodes);
+		sort($add);
+		$jdat['sadd'] = (count($add)===0) ? '1900-01-01' : $add[0];
+
+		$jdat['slen'] = array_sum(array_map(function ($a){ return $a['LENGTH']; }, $episodes));
+
+		$jdat['ssiz'] = array_sum(array_map(function ($a){ return $a['FILESIZE']; }, $episodes));
+
+		$jdat['syer'] = min(array_map(function ($a){ return $a['SYEAR']; }, $episodes)) . ' - ' . max(array_map(function ($a){ return $a['SYEAR']; }, $episodes));
+	}
+
+	$json []= $jdat;
 }
+
+usort($json, function ($a, $b) { return -strcmp($a['ser']?$a["sadd"]:$a["add"], $b['ser']?$b["sadd"]:$b["add"]); });
 
 if (isset($_GET['fmt']) && $_GET['fmt'] == '1')
 	echo json_encode($json, JSON_PRETTY_PRINT);
