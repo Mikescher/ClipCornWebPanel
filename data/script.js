@@ -4,6 +4,7 @@ const LAZY_IMAGES = false;
 let ALL_DATA = null;
 let FILTER   = null;
 let PAGE     = 0;
+let SBROW    = '#sb_0';
 
 let UNIQID   = 10000000;
 
@@ -13,6 +14,8 @@ let INPUT_EVENT = 999;
 
 $(window).on('load', function()
 {
+	preload();
+
 	$.ajax({
 		//url: "/ajax/list_elements.php?limit=100&fmt=1",
 		url: "/ajax/list_elements.php",
@@ -51,7 +54,11 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
 			setSidebarValues(false, [0, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':'Not viewed'}, function (e, v) { return !e['ser'] && e['vwd'] === (v===1); });
 
-			$('#filter').on('input', function()
+			let compFilter = $('#filter');
+
+			compFilter.val('');
+
+			compFilter.on('input', function()
 			{
 				let eid = ++INPUT_EVENT;
 				let v = $(this).val();
@@ -59,20 +66,11 @@ $(window).on('load', function()
 				setTimeout(function ()
 				{
 					if (INPUT_EVENT !== eid) return;
-
-					FILTER = function(e)
-					{
-						if (v === '') return true;
-						if (e['name'].toLowerCase().includes(v.toLowerCase())) return true;
-						if (e['zykl'].toLowerCase().includes(v.toLowerCase())) return true;
-						for (let g of e['grp']) if (g.toLowerCase().includes(v.toLowerCase())) return true;
-						for (let g of e['tgs']) if (getTagTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
-						for (let g of e['gnr']) if (getGenreTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
-						return false;
-					};
+					FILTER = function(e) { return econtains(e, v); };
 					PAGE=0;
+					SBROW=null;
 					refresh();
-
+					collapseSidebar(-1)
 				}, 500);
 
 			});
@@ -91,7 +89,7 @@ $(window).on('load', function()
 		refresh();
 	});
 
-	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; PAGE=0; refresh(); });
+	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); });
 	$("#sb_1").click(function () { collapseSidebar(0x1); });
 	$("#sb_2").click(function () { collapseSidebar(0x2); });
 	$("#sb_3").click(function () { collapseSidebar(0x3); });
@@ -131,6 +129,11 @@ function refresh()
 		if (take >= PAGESIZE) break;
 	}
 
+	$(".sidebar-level-1").removeClass('selected');
+	$(".sidebar-level-2").removeClass('selected');
+
+	if (SBROW !== null) $(SBROW).addClass('selected');
+
 	if (LAZY_IMAGES)
 	{
 		$('.lazy').lazy();
@@ -144,18 +147,19 @@ function refresh()
 
 function collapseSidebar(v)
 {
-	if (v !== 0x0) $("#sc_0").css('visibility', 'collapse').css('display', 'none'); else $("#sc_0").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x1) $("#sc_1").css('visibility', 'collapse').css('display', 'none'); else $("#sc_1").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x2) $("#sc_2").css('visibility', 'collapse').css('display', 'none'); else $("#sc_2").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x3) $("#sc_3").css('visibility', 'collapse').css('display', 'none'); else $("#sc_3").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x4) $("#sc_4").css('visibility', 'collapse').css('display', 'none'); else $("#sc_4").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x5) $("#sc_5").css('visibility', 'collapse').css('display', 'none'); else $("#sc_5").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x6) $("#sc_6").css('visibility', 'collapse').css('display', 'none'); else $("#sc_6").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x7) $("#sc_7").css('visibility', 'collapse').css('display', 'none'); else $("#sc_7").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x8) $("#sc_8").css('visibility', 'collapse').css('display', 'none'); else $("#sc_8").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0x9) $("#sc_9").css('visibility', 'collapse').css('display', 'none'); else $("#sc_9").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0xA) $("#sc_A").css('visibility', 'collapse').css('display', 'none'); else $("#sc_A").css('visibility', 'visible').css('display', 'flex');
-	if (v !== 0xB) $("#sc_B").css('visibility', 'collapse').css('display', 'none'); else $("#sc_B").css('visibility', 'visible').css('display', 'flex');
+	let arr = [ $("#sc_0"),$("#sc_1"),$("#sc_2"),$("#sc_3"),$("#sc_4"),$("#sc_5"),$("#sc_6"),$("#sc_7"),$("#sc_8"),$("#sc_9"),$("#sc_A"),$("#sc_B") ];
+
+	for(let i=0; i<12; i++)
+	{
+		if (v !== i || arr[i].css('visibility')==='visible')
+		{
+			arr[i].css('visibility', 'collapse').css('display', 'none');
+		}
+		else
+		{
+			arr[i].css('visibility', 'visible').css('display', 'flex');
+		}
+	}
 }
 
 function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, filter)
@@ -203,7 +207,14 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 	{
 		let id = '___' + (UNIQID++) + '___';
 		html += '<a href="#" class="sidebar-level-2" id="'+id+'">'+val.html+'</a>';
-		if (filter !== null) ff.push({xid: "#"+id, fn: function () { FILTER =function(e){ return filter(e, val.originalvalue); }; PAGE=0; refresh();} });
+		if (filter !== null) ff.push({xid: "#"+id, fn: function ()
+		{
+			$('#filter').val('');
+			FILTER =function(e){ return filter(e, val.originalvalue); };
+			SBROW='#'+id;
+			PAGE=0;
+			refresh();
+		}});
 	}
 
 	target.append(html);
@@ -316,6 +327,17 @@ function formatSize(bytes) {
 	return (bytes / Math.pow(1024, digitGroups)).toFixed(1) + " " + UNITS[digitGroups];
 }
 
+function econtains(e, v)
+{
+	if (v === '') return true;
+	if (e['name'].toLowerCase().includes(v.toLowerCase())) return true;
+	if (e['zykl'].toLowerCase().includes(v.toLowerCase())) return true;
+	for (let g of e['grp']) if (g.toLowerCase().includes(v.toLowerCase())) return true;
+	for (let g of e['tgs']) if (getTagTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
+	for (let g of e['gnr']) if (getGenreTitle(g).toLowerCase().includes(v.toLowerCase())) return true;
+	return false;
+}
+
 function addMovieEntry(e)
 {
 	let html = '';
@@ -324,7 +346,7 @@ function addMovieEntry(e)
 	html += '<div class="coverbox">';
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
-	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'" alt="Cover">';
+	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	if (e['vwd']) html += '<i class="viewed icn viewed-1"></i>';
 	html += '</div>';
 
@@ -333,7 +355,8 @@ function addMovieEntry(e)
 	html += '<div class="text">';
 	if (e['zykl'] !== '')
 	{
-		html += '<span class="zyklus">' + e['zykl'] + fmtZyklusNum(e['znum']) + '</span>';
+		let clck = 'FILTER = function(e){ return econtains(e, \'' + e['zykl'].replace(/'/g, "&#39;") + '\'); }; PAGE=0; refresh(); return false;';
+		html += '<span class="zyklus" onclick="'+clck+'">' + e['zykl'] + fmtZyklusNum(e['znum']) + '</span>';
 		html += '<span class="delim"> - </span>';
 	}
 	html += '<span class="title">' + e['name'] + '</span>';
@@ -434,4 +457,88 @@ function addSeriesEntry(e)
 
 
 	$("#maintable").append(html);
+}
+
+function preload()
+{
+	imgpreload('/data/icons/language/language_00_16x16.png');
+	imgpreload('/data/icons/language/language_01_16x16.png');
+	imgpreload('/data/icons/language/language_02_16x16.png');
+	imgpreload('/data/icons/language/language_03_16x16.png');
+	imgpreload('/data/icons/language/language_04_16x16.png');
+	imgpreload('/data/icons/language/language_05_16x16.png');
+	imgpreload('/data/icons/language/language_06_16x16.png');
+	imgpreload('/data/icons/language/language_07_16x16.png');
+	imgpreload('/data/icons/language/language_08_16x16.png');
+	imgpreload('/data/icons/language/language_09_16x16.png');
+	imgpreload('/data/icons/language/language_10_16x16.png');
+	imgpreload('/data/icons/language/language_11_16x16.png');
+	imgpreload('/data/icons/language/language_12_16x16.png');
+	imgpreload('/data/icons/language/language_13_16x16.png');
+	imgpreload('/data/icons/language/language_14_16x16.png');
+	imgpreload('/data/icons/language/language_15_16x16.png');
+	imgpreload('/data/icons/language/language_16_16x16.png');
+	imgpreload('/data/icons/language/language_17_16x16.png');
+	imgpreload('/data/icons/language/language_18_16x16.png');
+	imgpreload('/data/icons/language/language_19_16x16.png');
+	imgpreload('/data/icons/language/language_none_16x16.png');
+	imgpreload('/data/icons/stars/stars_0_16x16.png');
+	imgpreload('/data/icons/stars/stars_1_16x16.png');
+	imgpreload('/data/icons/stars/stars_2_16x16.png');
+	imgpreload('/data/icons/stars/stars_3_16x16.png');
+	imgpreload('/data/icons/stars/stars_4_16x16.png');
+	imgpreload('/data/icons/stars/stars_5_16x16.png');
+	imgpreload('/data/icons/stars/stars_6_16x16.png');
+	imgpreload('/data/icons/stars/stars_7_16x16.png');
+	imgpreload('/data/icons/stars/stars_8_16x16.png');
+	imgpreload('/data/icons/stars/stars_9_16x16.png');
+	imgpreload('/data/icons/stars/stars_10_16x16.png');
+	imgpreload('/data/icons/quality/quality_0_16x16.png');
+	imgpreload('/data/icons/quality/quality_1_16x16.png');
+	imgpreload('/data/icons/quality/quality_2_16x16.png');
+	imgpreload('/data/icons/quality/quality_3_16x16.png');
+	imgpreload('/data/icons/quality/quality_4_16x16.png');
+	imgpreload('/data/icons/fsk/fsk_0_16x16.png');
+	imgpreload('/data/icons/fsk/fsk_1_16x16.png');
+	imgpreload('/data/icons/fsk/fsk_2_16x16.png');
+	imgpreload('/data/icons/fsk/fsk_3_16x16.png');
+	imgpreload('/data/icons/fsk/fsk_4_16x16.png');
+	imgpreload('/data/icons/format/ext0_16x16.png');
+	imgpreload('/data/icons/format/ext1_16x16.png');
+	imgpreload('/data/icons/format/ext2_16x16.png');
+	imgpreload('/data/icons/format/ext3_16x16.png');
+	imgpreload('/data/icons/format/ext4_16x16.png');
+	imgpreload('/data/icons/format/ext5_16x16.png');
+	imgpreload('/data/icons/format/ext6_16x16.png');
+	imgpreload('/data/icons/format/ext7_16x16.png');
+	imgpreload('/data/icons/format/ext8_16x16.png');
+	imgpreload('/data/icons/format/ext8_16x16.png');
+	imgpreload('/data/icons/tags/tag_0_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_1_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_2_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_3_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_4_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_5_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_6_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_7_on_16x16.png');
+	imgpreload('/data/icons/tags/tag_8_on_16x16.png');
+	imgpreload('/data/icons/viewed/viewed_1.png');
+	imgpreload('/data/icons/viewed/viewed_4.png');
+	imgpreload('/data/icons/viewed/sb_0_16x16.png');
+	imgpreload('/data/icons/viewed/sb_1_16x16.png');
+	imgpreload('/data/icons/viewed/sb_1_16x16.png');
+	imgpreload('/data/icons/score/score_0_16x16.png');
+	imgpreload('/data/icons/score/score_1_16x16.png');
+	imgpreload('/data/icons/score/score_2_16x16.png');
+	imgpreload('/data/icons/score/score_3_16x16.png');
+	imgpreload('/data/icons/score/score_4_16x16.png');
+	imgpreload('/data/icons/score/score_5_16x16.png');
+	imgpreload('/data/icons/type/t0_16x16.png');
+	imgpreload('/data/icons/type/t1_16x16.png');
+}
+
+function imgpreload(url)
+{
+	let img=new Image();
+	img.src=url;
 }

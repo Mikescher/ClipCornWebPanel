@@ -214,6 +214,7 @@ body {
 .entry .text .zyklus {
     color: #444;
     margin-left: 8px;
+    cursor: pointer;
 }
 
 .entry .text .delim {
@@ -350,6 +351,13 @@ body {
 #sidebar .sidebar-level-2 .icn {
     display: block;
     margin: 0 4px 0 1px;
+}
+
+#sidebar .sidebar-level-1.selected {
+    background: #C33 !important;
+}
+#sidebar .sidebar-level-2.selected {
+    background: #C33 !important;
 }
 
 .lds-ripple {
