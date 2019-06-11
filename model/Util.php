@@ -26,4 +26,19 @@ class Util
 
 		return $r;
 	}
+
+	public static function getRefs($v)
+	{
+		$r = [];
+
+		foreach (explode(';', $v) as $x)
+		{
+			$s = explode(':', $x);
+			if (count($s) !== 2) continue;
+
+			$r []= ['k' => $s[0], 'v' => $s[1]];
+		}
+
+		return $r;
+	}
 }

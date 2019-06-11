@@ -37,6 +37,7 @@ foreach ($data as $dat)
 		'tgs'  => Util::getBits(intval($dat['TAGS'])),
 		'gnr'  => Util::getGenres(longval($dat['GENRE'])),
 		'add'  => $dat['ADDDATE'],
+		'ref'  => Util::getRefs($dat['ONLINEREF']),
 	];
 
 	if ($dat['TYPE']=='1')

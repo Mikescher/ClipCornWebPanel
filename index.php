@@ -64,6 +64,15 @@
 
 		</div>
 
+        <div id="pagefooter">
+            <div class="FooterInfo">Script:<span id="InfoCommit">?</span></div>
+            <div class="FooterInfo">Version:<span id="InfoVersion">?</span></div>
+            <div class="FooterInfo">Creation Timestamp:<span id="InfoTimestamp">?</span></div>
+            <div class="FooterInfo">UUID:<span id="InfoUUID">?</span></div>
+            <div class="FooterInfo">Size:<span id="InfoSize">?</span></div>
+            <div class="Sho"><a href="#" id="AnchorSho">Ϸ</a></div>
+        </div>
+
 	</div>
 
     <script src="/data/jquery-3.4.1.js" type="text/javascript" ></script>

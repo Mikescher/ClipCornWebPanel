@@ -4,6 +4,7 @@ const LAZY_IMAGES = false;
 let ALL_DATA = null;
 let FILTER   = null;
 let PAGE     = 0;
+let SHOW_UD  = false;
 let SBROW    = '#sb_0';
 
 let UNIQID   = 10000000;
@@ -79,28 +80,54 @@ $(window).on('load', function()
 		}
 	});
 
+	$.ajax({
+		url: "/ajax/get_info.php",
+		success: function(data)
+		{
+			let json = JSON.parse(data);
+
+			$("#pagefooter").css('display', "block");
+
+			$("#InfoVersion").text(json['VERSION_DB']);
+			$("#InfoTimestamp").text(json['CREATION_DATE'] + ' ' + json['CREATION_TIME']);
+			$("#InfoUUID").text(json['DATABASE_UNIVERSALLY_UNIQUE_IDENTIFIER']);
+			$("#InfoSize").text(formatSize(json['FILESIZE'])).attr("title", json['FILESIZE'] + " bytes");
+			$("#InfoCommit").text(json['COMMIT']);
+
+			return data;
+		}
+	});
+
+	$("#AnchorSho").click(function() {
+		SHOW_UD = true;
+		refresh();
+		return false;
+	});
+
 	$("#prevpage").click(function () {
 		PAGE = PAGE-1;
 		refresh();
+		return true;
 	});
 
 	$("#nextpage").click(function () {
 		PAGE = PAGE+1;
 		refresh();
+		return true;
 	});
 
-	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); $('#filter').val(''); });
-	$("#sb_1").click(function () { collapseSidebar(0x1); });
-	$("#sb_2").click(function () { collapseSidebar(0x2); });
-	$("#sb_3").click(function () { collapseSidebar(0x3); });
-	$("#sb_4").click(function () { collapseSidebar(0x4); });
-	$("#sb_5").click(function () { collapseSidebar(0x5); });
-	$("#sb_6").click(function () { collapseSidebar(0x6); });
-	$("#sb_7").click(function () { collapseSidebar(0x7); });
-	$("#sb_8").click(function () { collapseSidebar(0x8); });
-	$("#sb_9").click(function () { collapseSidebar(0x9); });
-	$("#sb_A").click(function () { collapseSidebar(0xA); });
-	$("#sb_B").click(function () { collapseSidebar(0xB); });
+	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); $('#filter').val(''); return true; });
+	$("#sb_1").click(function () { collapseSidebar(0x1); return false; });
+	$("#sb_2").click(function () { collapseSidebar(0x2); return false; });
+	$("#sb_3").click(function () { collapseSidebar(0x3); return false; });
+	$("#sb_4").click(function () { collapseSidebar(0x4); return false; });
+	$("#sb_5").click(function () { collapseSidebar(0x5); return false; });
+	$("#sb_6").click(function () { collapseSidebar(0x6); return false; });
+	$("#sb_7").click(function () { collapseSidebar(0x7); return false; });
+	$("#sb_8").click(function () { collapseSidebar(0x8); return false; });
+	$("#sb_9").click(function () { collapseSidebar(0x9); return false; });
+	$("#sb_A").click(function () { collapseSidebar(0xA); return false; });
+	$("#sb_B").click(function () { collapseSidebar(0xB); return false; });
 
 	collapseSidebar(0);
 });
@@ -349,15 +376,21 @@ function addMovieEntry(e)
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
-	if (e['vwd'])
+	if (SHOW_UD)
 	{
-		html += '<i class="viewed icn viewed-1" title="';
-		for (let h of e['his']) html += h;
-		html += '"></i>';
+		if (e['vwd'])
+		{
+			html += '<i class="viewed icn viewed-1" title="';
+			for (let h of e['his']) html += h;
+			html += '"></i>';
+		}
 	}
 	html += '</div>';
 
-	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
+	if (SHOW_UD)
+	{
+		if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
+	}
 
 	html += '<div class="text">';
 	if (e['zykl'] !== '')
@@ -423,11 +456,17 @@ function addSeriesEntry(e)
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else if (FIRST)  html += '<img class="delay cover" data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
 	else             html += '<img class="cover"            src="/ajax/get_cover.php?cid='+e['cid']+'">';
-	if (e['svwd']===1) html += '<i class="viewed icn viewed-1"></i>';
-	if (e['svwd']===4) html += '<i class="viewed icn viewed-4"></i>';
+	if (SHOW_UD)
+	{
+		if (e['svwd']===1) html += '<i class="viewed icn viewed-1"></i>';
+		if (e['svwd']===4) html += '<i class="viewed icn viewed-4"></i>';
+	}
 	html += '</div>';
 
-	if (e['scr'] !== 6) html += '<i title="'+getScoreTitle(e['scr'])+'" class="score icn score-'+e['scr']+'"></i>';
+	if (SHOW_UD)
+	{
+		if (e['scr'] !== 6) html += '<i title="' + getScoreTitle(e['scr']) + '" class="score icn score-' + e['scr'] + '"></i>';
+	}
 
 	html += '<div class="text">';
 	html += '<span class="title">' + e['name'] + '</span>';
