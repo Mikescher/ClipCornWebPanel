@@ -7,7 +7,10 @@ class Database
 
 	public static function connect()
 	{
-		$dsn = "sqlite:" . UserConfig::get("sqlite_path");
+		$path = UserConfig::get("sqlite_path");
+
+		if (!file_exists($path)) throw new Exception('DB File not found: ' . $path);
+		$dsn = "sqlite:" . $path;
 		$opt =
 		[
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

@@ -79,12 +79,16 @@ body {
     min-height: 82px;
 }
 
-#header #headertext {
+#topheader {
+    display: none;
+}
+
+#headertext {
     display: inline-flex;
     align-items: center;
 }
 
-#header #headertext span {
+#headertext span {
     display: inline-block;
     vertical-align: middle;
     line-height: normal;
@@ -97,7 +101,7 @@ body {
     text-shadow: 0 0 4px #000;
 }
 
-#header #headertext img {
+#headertext img {
     width: 64px;
     height: 64px;
     margin: 8px;
@@ -412,7 +416,7 @@ body {
     height: 24px;
     border: 1px solid black;
     position: absolute;
-    left: 0px;
+    left: 0;
     right: 0;
     
     padding: 1px 0 0 8px ;
@@ -448,3 +452,65 @@ body {
     margin-left: auto;
 }
 
+@media(max-width:1100px)
+{
+    #topheader {
+        display: block;
+        padding: 32px 12px 12px;
+        text-align: center;
+        position: relative;
+        min-height: 82px;
+    }
+    
+    #header {
+        display: none;
+    }
+
+    #sidebar {
+        position: initial;
+        width: initial;
+    } 
+    
+    #content {
+        margin-left: 0;
+    }
+    
+    .entry .text span {
+        font-size: 24pt;
+    }
+    
+    .entry .text {
+        font-size: 20pt;
+        flex-direction: column;
+        align-items: start;
+        grid-row: 1;
+        white-space: normal;
+    }
+    
+    .entry .text .delim {
+        display: none;
+    }
+    .entry .text .title {
+        margin-left: 8px;
+    }
+    
+    .entry .info > div{
+        margin-top: 4px;
+    }
+
+    #content {
+        min-height: initial;
+    }
+    
+    #pagefooter {
+        display: flex !important;
+        flex-direction: column;
+        align-items: start;
+        height: initial;
+        padding: 4px;
+    }
+    
+    #pagefooter .FooterInfo {
+        margin: 0;
+    }
+}

@@ -13,6 +13,11 @@
 
 	<div id="root">
 
+        <div id="topheader">
+            <div id="headertext"><img src="/data/icon.png" /><span>jClipCorn</span></div>
+            <input type="text" id="filter" placeholder="Search" >
+        </div>
+
 		<div id="sidebar">
             <a href="#" id="sb_0" class="sidebar-level-1">All</a>
             <div id="sc_0"></div>
