@@ -55,7 +55,7 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
 			setSidebarValues(false, [0, 4, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':((i===0)?'Not viewed':'Partially viewed\'Viewed\':');}, function (e, v) { return (!e['ser'] && e['vwd'] && v===1) || (!e['ser'] && !e['vwd'] && v===0) ||(e['ser'] && e['svwd']===v); });
 
-			let compFilter = $('#filter');
+			let compFilter = $('.filter');
 
 			compFilter.val('');
 
@@ -116,7 +116,7 @@ $(window).on('load', function()
 		return true;
 	});
 
-	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); $('#filter').val(''); return true; });
+	$("#sb_0").click(function () { collapseSidebar(0x0); FILTER = function(e){ return true; }; SBROW='#sb_0'; PAGE=0; refresh(); $('.filter').val(''); return true; });
 	$("#sb_1").click(function () { collapseSidebar(0x1); return false; });
 	$("#sb_2").click(function () { collapseSidebar(0x2); return false; });
 	$("#sb_3").click(function () { collapseSidebar(0x3); return false; });
@@ -238,7 +238,7 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 		html += '<a href="#" class="sidebar-level-2" id="'+id+'">'+val.html+'</a>';
 		if (filter !== null) ff.push({xid: "#"+id, fn: function ()
 		{
-			$('#filter').val('');
+			$('.filter').val('');
 			FILTER =function(e){ return filter(e, val.originalvalue); };
 			SBROW='#'+id;
 			PAGE=0;

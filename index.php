@@ -15,7 +15,7 @@
 
         <div id="topheader">
             <div id="headertext"><img src="/data/icon.png" /><span>jClipCorn</span></div>
-            <input type="text" id="filter" placeholder="Search" >
+            <input type="text" class="filter" placeholder="Search" >
         </div>
 
 		<div id="sidebar">
@@ -49,7 +49,7 @@
 
 			<div id="header">
 				<div id="headertext"><img src="/data/icon.png" /><span>jClipCorn</span></div>
-				<input type="text" id="filter" placeholder="Search" >
+				<input type="text" class="filter" placeholder="Search" >
 			</div>
 
             <div id="maintable">

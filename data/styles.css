@@ -107,7 +107,7 @@ body {
     margin: 8px;
 }
 
-#filter {
+.filter {
     position: absolute;
     right: 6px;
     top: 6px;
