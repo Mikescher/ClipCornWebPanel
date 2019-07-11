@@ -452,6 +452,8 @@ body {
     margin-left: auto;
 }
 
+.phidden { display: none; visibility: hidden; }
+
 @media(max-width:1100px)
 {
     #topheader {

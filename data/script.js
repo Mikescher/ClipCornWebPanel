@@ -15,6 +15,8 @@ let INPUT_EVENT = 999;
 
 $(window).on('load', function()
 {
+	if (!SHOW_UD) $(".pshouldhide").addClass("phidden"); else $(".pshouldhide").removeClass("phidden");
+
 	preload();
 
 	$.ajax({
@@ -53,7 +55,7 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_8'), 'tag-', getTagTitle, function (e, v) { return e['tgs'].includes(v); });
 			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle, function (e, v) { return !e['ser'] && e['lng'].includes(v); });
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
-			setSidebarValues(false, [0, 4, 1], false, $('#sc_B'), 'view-', function (i) {return (i===1)?'Viewed':((i===0)?'Not viewed':'Partially viewed\'Viewed\':');}, function (e, v) { return (!e['ser'] && e['vwd'] && v===1) || (!e['ser'] && !e['vwd'] && v===0) ||(e['ser'] && e['svwd']===v); });
+			setSidebarValues(false, [0, 4, 1], false, $('#sc_B'), 'view-', function (i) {return ["Not viewed","Viewed","Partially viewed"][i];}, function (e, v) { return (!e['ser'] && e['vwd'] && v===1) || (!e['ser'] && !e['vwd'] && v===0) ||(e['ser'] && e['svwd']===v); });
 
 			let compFilter = $('.filter');
 
@@ -135,6 +137,8 @@ $(window).on('load', function()
 function refresh()
 {
 	$("#maintable").empty();
+
+	if (!SHOW_UD) $(".pshouldhide").addClass("phidden"); else $(".pshouldhide").removeClass("phidden");
 
 	if (ALL_DATA === null) return;
 
