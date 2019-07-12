@@ -2,10 +2,15 @@ const PAGESIZE = 128;
 const LAZY_IMAGES = false;
 
 let ALL_DATA = null;
+let SER_DATA = {};
+
 let FILTER   = null;
 let PAGE     = 0;
 let SHOW_UD  = false;
 let SBROW    = '#sb_0';
+
+let SEL_SER  = null;
+let SEL_SEAS = null;
 
 let UNIQID   = 10000000;
 
@@ -15,7 +20,7 @@ let INPUT_EVENT = 999;
 
 $(window).on('load', function()
 {
-	if (!SHOW_UD) $(".pshouldhide").addClass("phidden"); else $(".pshouldhide").removeClass("phidden");
+	if (!SHOW_UD) $(".pshouldhide").addClass("anyhidden"); else $(".pshouldhide").removeClass("anyhidden");
 
 	preload();
 
@@ -40,6 +45,8 @@ $(window).on('load', function()
 			ALL_DATA = json;
 			FILTER = null;
 			PAGE = 0;
+			SEL_SER  = null;
+			SEL_SEAS = null;
 			refresh();
 
 			$('#rippleloader').remove();
@@ -108,12 +115,16 @@ $(window).on('load', function()
 
 	$("#prevpage").click(function () {
 		PAGE = PAGE-1;
+		SEL_SER  = null;
+		SEL_SEAS = null;
 		refresh();
 		return true;
 	});
 
 	$("#nextpage").click(function () {
 		PAGE = PAGE+1;
+		SEL_SER  = null;
+		SEL_SEAS = null;
 		refresh();
 		return true;
 	});
@@ -138,7 +149,7 @@ function refresh()
 {
 	$("#maintable").empty();
 
-	if (!SHOW_UD) $(".pshouldhide").addClass("phidden"); else $(".pshouldhide").removeClass("phidden");
+	if (!SHOW_UD) $(".pshouldhide").addClass("anyhidden"); else $(".pshouldhide").removeClass("anyhidden");
 
 	if (ALL_DATA === null) return;
 
@@ -246,6 +257,8 @@ function setSidebarValues(presorted, values, sorted, target, icon, txtconvert, f
 			FILTER =function(e){ return filter(e, val.originalvalue); };
 			SBROW='#'+id;
 			PAGE=0;
+			SEL_SER  = null;
+			SEL_SEAS = null;
 			refresh();
 		}});
 	}
@@ -385,7 +398,7 @@ function addMovieEntry(e)
 		if (e['vwd'])
 		{
 			html += '<i class="viewed icn viewed-1" title="';
-			for (let h of e['his']) html += h;
+			for (let h of e['his']) html += h + "\n";
 			html += '"></i>';
 		}
 	}
@@ -452,9 +465,11 @@ function addMovieEntry(e)
 
 function addSeriesEntry(e)
 {
+	let id = '___ser_entry_' + e['sid'] + '___';
+
 	let html = '';
 
-	html += '<div class="entry seriesentry">';
+	html += '<div class="entry seriesentry" id="'+id+'">';
 	html += '<div class="coverbox">';
 	html += '<img class="coveroverlay" src="/data/mask_series.png" alt="Overlay">';
 	if (LAZY_IMAGES) html += '<img class="lazy cover"  data-src="/ajax/get_cover.php?cid='+e['cid']+'">';
@@ -517,8 +532,166 @@ function addSeriesEntry(e)
 
 	html += '</div>';
 
+	html += '<div class="seriesdata" id="seriesdata__'+e['sid']+'">';
+	html += '<div id="seriesrippleloader__'+e['sid']+'" class="ripple lds-ripple2"><div></div><div></div><div></div></div>';
+	html += '<div class="seriesinnerdata" id="seriesinnerdata__'+e['sid']+'"></div>';
+	html += '</div>';
 
 	$("#maintable").append(html);
+
+	$('#'+id).click(function ()
+	{
+		let me = $('#'+id);
+
+		if (me.hasClass('seriesentry_open')) { unshowSeries(); return; }
+
+		SEL_SER  = e['sid'];
+		SEL_SEAS = null;
+
+		$('#seriesinnerdata__' + e['sid']).html('');
+
+		$('#seriesrippleloader__' + e['sid']).removeClass("anyhidden");
+
+		$('.seriesentry').removeClass("seriesentry_open");
+		me.addClass("seriesentry_open");
+
+		$('.seriesdata').removeClass("seriesdata_open");
+		$('#seriesdata__'+e['sid']).addClass("seriesdata_open");
+
+		$('#___ser_entry_' + e['sid'] + '___')[0].scrollIntoView(true);
+
+		if (e['sid'] in SER_DATA) {
+
+			showSeries(e['sid'], SER_DATA[e['sid']], null);
+
+		} else {
+
+			$.ajax({
+				url: "/ajax/list_series.php?sid="+e['sid'],
+				success: function(data)
+				{
+					let json = JSON.parse(data);
+					SER_DATA[e['sid']] = json;
+
+					if (SEL_SER === e['sid'] && SEL_SEAS === null) showSeries(e['sid'], json, null);
+				}
+			});
+		}
+
+		return false;
+	});
+}
+
+function unshowSeries() {
+	SEL_SER  = null;
+	SEL_SEAS = null;
+
+	$('.seriesentry').removeClass("seriesentry_open");
+	$('.seriesdata').removeClass("seriesdata_open");
+}
+
+function showSeries(seriesid, seriesdata, seasonidx) {
+
+	let uniid = '___' + (UNIQID++);
+
+	if (seriesdata['s'].length === 0) { unshowSeries(); return; }
+
+	let season = seriesdata['s'][0];
+	if (seasonidx !== null) {
+		for(let seas of seriesdata['s']) {
+			if (seas['id'] === seasonidx) { season = seas; break; }
+		}
+	}
+	seasonidx = season['id'];
+
+	let html = '';
+
+	html += '<div class="coverbox">';
+	html += '<img class="cover" src="/ajax/get_cover.php?cid='+season['cid']+'">';
+	html += '</div>';
+
+	html += '<span class="sheader">';
+	html += '<span class="stitle">' + season['name'] + '</span>';
+	html += '<span class="syear">' + season['year'] + '</span>';
+	html += '</span>';
+
+	html += '<div class="seasonbox seabox_' + Math.ceil(seriesdata['s'].length / 4) +' ' + ((seriesdata['s'].length===1) ? 'anyhidden' : '') + '">';
+	for (let i = 0; i < seriesdata['s'].length; i++) {
+		html += '<div class="seasonbtn'+(  (seriesdata['s'][i]['id'] === seasonidx) ? ' sbtn_active' : ''  )+'" id="'+uniid+'__'+seriesid+'__'+seriesdata['s'][i]['id']+'">'+(i+1)+'</div>';
+	}
+	html += '</div>';
+
+
+	html += '<div class="seasontableowner">';
+	html += '<table class="seasontable">';
+	html += '<thead>';
+	html += '<tr>';
+	html += '<th class="th_epis" >E</th>';
+	html += '<th class="th_name" >Title</th>';
+	html += '<th class="th_vwd '+ (SHOW_UD ? '' : 'anyhidden') +'" ><!--Viewed--></th>';
+	html += '<th class="th_leng" >Len</th>';
+	html += '<th class="th_tags" >Tags</th>';
+	html += '<th class="th_dadd" >Added</th>';
+	html += '<th class="th_meta" >Meta</th>';
+	html += '<th class="th_size" >Size</th>';
+	html += '</tr>';
+	html += '</thead>';
+	html += '<tbody>';
+	for (let i = 0; i < season['e'].length; i++)
+	{
+		let episode = season['e'][i];
+		html += '<tr>';
+
+		html += '<td class="td_epis">' + episode['epis'] + '</td>';
+
+		html += '<td class="td_name">' + episode['name'] + '</td>';
+
+		html += '<td class="td_vwd '+ (SHOW_UD ? '' : 'anyhidden') +'">';
+		html += '<div class="td_inner">';
+		html += '<i class="viewed icn viewed-'+(episode['vwd']?1:0)+'" title="';
+		for (let h of episode['his']) html += h + "\n";
+		html += '"></i>';
+		html += '</div>';
+		html += '</td>';
+
+		html += '<td class="td_leng" title="'+formatLength(episode['len'])+'">' + episode['len'] + ' min.</td>';
+
+		html += '<td class="td_tags">';
+		html += '<div class="td_inner">';
+		for (let tag of episode['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
+		html += '</div>';
+		html += '</td>';
+
+		html += '<td class="td_dadd">' + episode['add'] + '</td>';
+
+		html += '<td class="td_frmt">';
+		html += '<div class="td_inner">';
+		html += '<i class="icn quality-'+episode['qal']+'" title="'+getQualityTitle(episode['qal'])+'"></i>';
+		html += '<i class="icn format-'+episode['fmt']+'" title="'+getFormatTitle(episode['fmt'])+'"></i>';
+		for (let lng of episode['lng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
+		if (episode['lng'].length === 0) html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
+		html += '</div>';
+		html += '</td>';
+
+		html += '<td class="td_size">' + formatSize(episode['siz']) + '</td>';
+		html += '</tr>';
+	}
+	html += '</tbody>';
+	html += '</table>';
+	html += '</div>';
+
+	$('#seriesrippleloader__' + seriesid).addClass("anyhidden");
+	$('#seriesinnerdata__' + seriesid).html(html);
+
+
+	for (let i = 0; i < seriesdata['s'].length; i++)
+	{
+		$('#' + uniid+'__'+seriesid+'__'+seriesdata['s'][i]['id']).click(function()
+		{
+			SEL_SEAS = seriesdata['s'][i]['id'];
+			showSeries(seriesid, seriesdata, seriesdata['s'][i]['id']);
+		});
+	}
 }
 
 function preload()

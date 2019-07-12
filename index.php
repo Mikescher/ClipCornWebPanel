@@ -27,8 +27,8 @@
             <div id="sc_2"></div>
             <a href="#" id="sb_3" class="sidebar-level-1">Rating</a>
             <div id="sc_3"></div>
-            <a href="#" id="sb_4" class="sidebar-level-1 pshouldhide phidden">User score</a>
-            <div id="sc_4" class="pshouldhide phidden"></div>
+            <a href="#" id="sb_4" class="sidebar-level-1 pshouldhide anyhidden">User score</a>
+            <div id="sc_4" class="pshouldhide anyhidden"></div>
             <a href="#" id="sb_5" class="sidebar-level-1">Parental rating</a>
             <div id="sc_5"></div>
             <a href="#" id="sb_6" class="sidebar-level-1">Format</a>
@@ -41,8 +41,8 @@
             <div id="sc_9"></div>
             <a href="#" id="sb_A" class="sidebar-level-1">Type</a>
             <div id="sc_A"></div>
-            <a href="#" id="sb_B" class="sidebar-level-1 pshouldhide phidden">Viewed</a>
-            <div id="sc_B" class="pshouldhide phidden"></div>
+            <a href="#" id="sb_B" class="sidebar-level-1 pshouldhide anyhidden">Viewed</a>
+            <div id="sc_B" class="pshouldhide anyhidden"></div>
 		</div>
 
 		<div id="content">
@@ -55,7 +55,7 @@
             <div id="maintable">
 
                 <!-- AJAX -->
-                <div id="rippleloader" class="lds-ripple"><div></div><div></div></div>
+                <div id="rippleloader" class="ripple lds-ripple2"><div></div><div></div><div></div></div>
 
             </div>
 
