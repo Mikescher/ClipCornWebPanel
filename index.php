@@ -69,7 +69,7 @@
 
 		</div>
 
-        <div id="pagefooter">
+        <div id="pagefooter" class="preloadfooter">
             <div class="FooterInfo">Script:<span id="InfoCommit">?</span></div>
             <div class="FooterInfo">Version:<span id="InfoVersion">?</span></div>
             <div class="FooterInfo">Creation Timestamp:<span id="InfoTimestamp">?</span></div>

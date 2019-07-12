@@ -512,9 +512,13 @@ body {
         height: initial;
         padding: 4px;
     }
-    
+
     #pagefooter .FooterInfo {
         margin: 0;
+    }
+
+    #pagefooter.preloadfooter {
+        display: none !important;
     }
 }
 

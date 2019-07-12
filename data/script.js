@@ -29,6 +29,8 @@ $(window).on('load', function()
 		url: "/ajax/list_elements.php",
 		success: function(data)
 		{
+			$("#pagefooter").removeClass('preloadfooter');
+
 			let json = JSON.parse(data);
 
 			let groups = [];
