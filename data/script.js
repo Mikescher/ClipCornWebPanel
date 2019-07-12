@@ -664,7 +664,7 @@ function showSeries(seriesid, seriesdata, seasonidx) {
 
 		html += '<td class="td_dadd">' + episode['add'] + '</td>';
 
-		html += '<td class="td_frmt">';
+		html += '<td class="td_meta">';
 		html += '<div class="td_inner">';
 		html += '<i class="icn quality-'+episode['qal']+'" title="'+getQualityTitle(episode['qal'])+'"></i>';
 		html += '<i class="icn format-'+episode['fmt']+'" title="'+getFormatTitle(episode['fmt'])+'"></i>';

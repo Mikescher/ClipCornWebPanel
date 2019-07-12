@@ -688,16 +688,25 @@ body {
     background: #CCC;
 }
 
+.seriesinnerdata .seasontable td {
+    white-space:nowrap
+}
+
 .seriesinnerdata .seasontable .td_inner {
     display: flex;
 }
 
 .seriesinnerdata .seasontable .td_epis {
     text-align: center;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .seriesinnerdata .seasontable .td_name {
     padding-left: 4px;
+    padding-right: 4px;
+    width: 99%;
+    white-space: initial;
 }
 
 .seriesinnerdata .seasontable .th_vwd {
@@ -706,14 +715,51 @@ body {
 
 .seriesinnerdata .seasontable .td_leng {
     padding-left: 4px;
+    padding-right: 4px;
+}
+
+.seriesinnerdata .seasontable .td_meta {
+    padding-right: 6px;
 }
 
 .seriesinnerdata .seasontable .td_dadd {
     padding-left: 4px;
+    padding-right: 4px;
 }
 
 .seriesinnerdata .seasontable .td_size {
     padding-left: 4px;
+    padding-right: 4px;
+}
+
+
+@media(max-width:750px)
+{
+    .seriesdata {max-height: unset;}
+    .seriesinnerdata .seasontableowner { overflow: initial; }
+}
+
+@media(max-width:750px)
+{
+.seriesinnerdata .seasontable .th_name { display: none; }
+.seriesinnerdata .seasontable .th_vwd  { display: none; }
+.seriesinnerdata .seasontable .th_epis { display: none; }
+        
+.seriesinnerdata .seasontable .td_leng { display: none; }
+.seriesinnerdata .seasontable .th_leng { display: none; }
+    
+.seriesinnerdata .seasontable .td_dadd { display: none; }
+.seriesinnerdata .seasontable .th_dadd { display: none; }
+    
+.seriesinnerdata .seasontable .td_size { display: none; }
+.seriesinnerdata .seasontable .th_size { display: none; }
+    
+.seriesinnerdata .seasontable .td_tags { display: none; }
+.seriesinnerdata .seasontable .th_tags { display: none; }
+    
+.seriesinnerdata .seasontable .td_meta { display: none; }
+.seriesinnerdata .seasontable .th_meta { display: none; }
+    
 }
 
 
