@@ -33,7 +33,7 @@ foreach ($data as $dat)
 		'lng'  => Util::getBits(intval($dat['LANGUAGE'])),
 		'fmt'  => intval($dat['FORMAT']),
 		'fsk'  => intval($dat['FSK']),
-		'qal'  => intval($dat['QUALITY']),
+		//'qal'  => intval($dat['QUALITY']),
 		'tgs'  => Util::getBits(intval($dat['TAGS'])),
 		'gnr'  => Util::getGenres(longval($dat['GENRE'])),
 		'add'  => $dat['ADDDATE'],

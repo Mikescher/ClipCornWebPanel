@@ -60,7 +60,7 @@ $(window).on('load', function()
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle, function (e, v) { return e['fsk'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_6'), 'format-', getFormatTitle, function (e, v) { return !e['ser'] && e['fmt'] === v; });
-			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_7'), 'fsk-', getQualityTitle, function (e, v) { return !e['ser'] && e['qal'] === v; });
+			//setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_7'), 'quality-', getQualityTitle, function (e, v) { return !e['ser'] && e['qal'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_8'), 'tag-', getTagTitle, function (e, v) { return e['tgs'].includes(v); });
 			setSidebarValues(true,  langs, false, $('#sc_9'), 'lang-', getLangTitle, function (e, v) { return !e['ser'] && e['lng'].includes(v); });
 			setSidebarValues(false, [0, 1], false, $('#sc_A'), 'typ-', function (i) {return (i===0)?'Movie':'Series'}, function (e, v) { return e['ser'] === (v===1); });
@@ -193,7 +193,7 @@ function refresh()
 
 function collapseSidebar(v)
 {
-	let arr = [ $("#sc_0"),$("#sc_1"),$("#sc_2"),$("#sc_3"),$("#sc_4"),$("#sc_5"),$("#sc_6"),$("#sc_7"),$("#sc_8"),$("#sc_9"),$("#sc_A"),$("#sc_B") ];
+	let arr = [ $("#sc_0"),$("#sc_1"),$("#sc_2"),$("#sc_3"),$("#sc_4"),$("#sc_5"),$("#sc_6"),/*$("#sc_7"),*/$("#sc_8"),$("#sc_9"),$("#sc_A"),$("#sc_B") ];
 
 	for(let i=0; i<12; i++)
 	{
@@ -293,10 +293,10 @@ function getLangTitle(lng)
 	return ['German', 'English', 'Muted', 'French', 'Japanese', 'Italian', 'Spanish', 'Portuguese', 'Danish', 'Finnish', 'Swedisch', 'Norwegian', 'Dutch', 'Czech', 'Polish', 'Turkish', 'Hungarian', 'Bulgarian', 'Russian', 'Chinese'][lng];
 }
 
-function getQualityTitle(qal)
-{
-	return ['Stream', 'CD', 'CD\'s', 'DVD', 'BluRay'][qal];
-}
+//function getQualityTitle(qal)
+//{
+//	return ['Stream', 'CD', 'CD\'s', 'DVD', 'BluRay'][qal];
+//}
 
 function getFSKTitle(fsk)
 {
@@ -427,7 +427,7 @@ function addMovieEntry(e)
 	if (e['lng'].length === 0)  html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
 	html += '</div>';
 	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
-	html += '<div class="quality_fsk_format"><i class="icn quality-'+e['qal']+'" title="'+getQualityTitle(e['qal'])+'"></i><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i><i title="'+getFormatTitle(e['fmt'])+'" class="icn format-'+e['fmt']+'"></i></div>';
+	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i><i title="'+getFormatTitle(e['fmt'])+'" class="icn format-'+e['fmt']+'"></i></div>';
 	html += '<div class="tags">';
 	for (let tag of e['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
 	html += '</div>';
@@ -668,7 +668,6 @@ function showSeries(seriesid, seriesdata, seasonidx) {
 
 		html += '<td class="td_meta">';
 		html += '<div class="td_inner">';
-		html += '<i class="icn quality-'+episode['qal']+'" title="'+getQualityTitle(episode['qal'])+'"></i>';
 		html += '<i class="icn format-'+episode['fmt']+'" title="'+getFormatTitle(episode['fmt'])+'"></i>';
 		for (let lng of episode['lng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
 		if (episode['lng'].length === 0) html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
@@ -730,11 +729,11 @@ function preload()
 	imgpreload('/data/icons/stars/stars_8_16x16.png');
 	imgpreload('/data/icons/stars/stars_9_16x16.png');
 	imgpreload('/data/icons/stars/stars_10_16x16.png');
-	imgpreload('/data/icons/quality/quality_0_16x16.png');
-	imgpreload('/data/icons/quality/quality_1_16x16.png');
-	imgpreload('/data/icons/quality/quality_2_16x16.png');
-	imgpreload('/data/icons/quality/quality_3_16x16.png');
-	imgpreload('/data/icons/quality/quality_4_16x16.png');
+	//imgpreload('/data/icons/quality/quality_0_16x16.png');
+	//imgpreload('/data/icons/quality/quality_1_16x16.png');
+	//imgpreload('/data/icons/quality/quality_2_16x16.png');
+	//imgpreload('/data/icons/quality/quality_3_16x16.png');
+	//imgpreload('/data/icons/quality/quality_4_16x16.png');
 	imgpreload('/data/icons/fsk/fsk_0_16x16.png');
 	imgpreload('/data/icons/fsk/fsk_1_16x16.png');
 	imgpreload('/data/icons/fsk/fsk_2_16x16.png');

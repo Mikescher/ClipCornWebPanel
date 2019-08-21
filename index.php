@@ -33,8 +33,8 @@
             <div id="sc_5"></div>
             <a href="#" id="sb_6" class="sidebar-level-1">Format</a>
             <div id="sc_6"></div>
-            <a href="#" id="sb_7" class="sidebar-level-1">Quality</a>
-            <div id="sc_7"></div>
+            <!--<a href="#" id="sb_7" class="sidebar-level-1">Quality</a>
+            <div id="sc_7"></div>-->
             <a href="#" id="sb_8" class="sidebar-level-1">Tags</a>
             <div id="sc_8"></div>
             <a href="#" id="sb_9" class="sidebar-level-1">Language</a>

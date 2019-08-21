@@ -41,7 +41,7 @@ foreach ($data_seas as $dbseas)
 			'name' => $dbepis['NAME'],
 			'vwd'  => $dbepis['VIEWED']=='1',
 			'his'  => ($dbepis['VIEWED_HISTORY']=='') ? [] : explode(',', $dbepis['VIEWED_HISTORY']),
-			'qal'  => intval($dbepis['QUALITY']),
+			//'qal'  => intval($dbepis['QUALITY']),
 			'len'  => intval($dbepis['LENGTH']),
 			'fmt'  => intval($dbepis['FORMAT']),
 			'siz'  => longval($dbepis['FILESIZE']),
