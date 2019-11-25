@@ -193,10 +193,12 @@ function refresh()
 
 function collapseSidebar(v)
 {
-	let arr = [ $("#sc_0"),$("#sc_1"),$("#sc_2"),$("#sc_3"),$("#sc_4"),$("#sc_5"),$("#sc_6"),/*$("#sc_7"),*/$("#sc_8"),$("#sc_9"),$("#sc_A"),$("#sc_B") ];
+	let arr = [ $("#sc_0"),$("#sc_1"),$("#sc_2"),$("#sc_3"),$("#sc_4"),$("#sc_5"),$("#sc_6"),null,$("#sc_8"),$("#sc_9"),$("#sc_A"),$("#sc_B") ];
 
 	for(let i=0; i<12; i++)
 	{
+		if (arr[i] === null) continue;
+		
 		if (v !== i || arr[i].css('visibility')==='visible')
 		{
 			arr[i].css('visibility', 'collapse').css('display', 'none');
