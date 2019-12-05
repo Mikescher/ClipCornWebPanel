@@ -3,18 +3,22 @@
 
 <head>
 	<meta charset="utf-8">
+	<meta name="robots" content="noindex">
+
 	<title>jClipCorn - Webview</title>
-	<link rel="icon" type="image/png" href="/data/icon.png"/>
-    <link rel="stylesheet" href="/data/styles.css"/>
-    <link rel="stylesheet" href="/data/styles-icons.css"/>
-    <link rel="stylesheet" href="/data/styles-ext.css"/>
+
+	<link rel="icon" type="image/png" href="/data/icon_jcc.png"/>
+
+	<link rel="stylesheet" href="/data/styles.css"/>
+	<link rel="stylesheet" href="/data/styles-icons.css"/>
+	<link rel="stylesheet" href="/data/styles-ext.css"/>
 </head>
 <body>
 
 	<div id="root">
 
         <div id="topheader">
-            <div id="headertext"><img src="/data/icon.png" /><span>jClipCorn</span></div>
+            <div id="headertext"><img src="/data/icon_jcc.png" /><span>jClipCorn</span></div>
             <input type="text" class="filter" placeholder="Search" >
         </div>
 
@@ -43,12 +47,18 @@
             <div id="sc_A"></div>
             <a href="#" id="sb_B" class="sidebar-level-1 pshouldhide anyhidden">Viewed</a>
             <div id="sc_B" class="pshouldhide anyhidden"></div>
+
+		</div>
+		<div id="linksidebar">
+			<a href="https://ebooks.mikescher.com" title="Ebooks"><img src="/data/icon_ebk.png" /><span> Ebooks</span></a>
+			<a href="https://audiobooks.mikescher.com" title="Audiobooks"><img src="/data/icon_audio.png" /><span> Audiobooks</span></a>
+			<a href="https://clipcorn.mikescher.com" title="Movies"><img src="/data/icon_jcc.png" /><span> Movies</span></a>
 		</div>
 
 		<div id="content">
 
 			<div id="header">
-				<div id="headertext"><img src="/data/icon.png" /><span>jClipCorn</span></div>
+				<div id="headertext"><img src="/data/icon_jcc.png" /><span>jClipCorn</span></div>
 				<input type="text" class="filter" placeholder="Search" >
 			</div>
 
