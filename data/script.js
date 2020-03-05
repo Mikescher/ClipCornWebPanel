@@ -57,7 +57,7 @@ $(window).on('load', function()
 			setSidebarValues(false, groups, true, $('#sc_1'), null, null, function (e, v) { return e['grp'].includes(v); });
 			setSidebarValues(false, genres, true, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null, function (e, v) { return e['oscr'] === v; });
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
+			setSidebarValues(false, [6, 0, 1, 2, 7, 3, 4, 5], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle, function (e, v) { return e['fsk'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_6'), 'format-', getFormatTitle, function (e, v) { return !e['ser'] && e['fmt'] === v; });
 			//setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_7'), 'quality-', getQualityTitle, function (e, v) { return !e['ser'] && e['qal'] === v; });
@@ -286,13 +286,13 @@ function fmtZyklusNum(num)
 
 function getScoreTitle(scr)
 {
-	return ['Crappy Movie', 'Bad Movie', 'Not recommended', 'Good enough', 'Recommended', 'Masterpiece', '<i>Unset</i>'][scr];
+	return ['Crappy Movie', 'Bad Movie', 'Not recommended', 'Good enough', 'Recommended', 'Masterpiece', '<i>Unset</i>', 'Average'][scr];
 }
 
 function getLangTitle(lng)
 {
 	if (lng===-1) return 'None';
-	return ['German', 'English', 'Muted', 'French', 'Japanese', 'Italian', 'Spanish', 'Portuguese', 'Danish', 'Finnish', 'Swedisch', 'Norwegian', 'Dutch', 'Czech', 'Polish', 'Turkish', 'Hungarian', 'Bulgarian', 'Russian', 'Chinese'][lng];
+	return ['German', 'English', 'Muted', 'French', 'Japanese', 'Italian', 'Spanish', 'Portuguese', 'Danish', 'Finnish', 'Swedisch', 'Norwegian', 'Dutch', 'Czech', 'Polish', 'Turkish', 'Hungarian', 'Bulgarian', 'Russian', 'Chinese', 'Korean'][lng];
 }
 
 //function getQualityTitle(qal)
@@ -719,6 +719,7 @@ function preload()
 	imgpreload('/data/icons/language/language_17_16x16.png');
 	imgpreload('/data/icons/language/language_18_16x16.png');
 	imgpreload('/data/icons/language/language_19_16x16.png');
+	imgpreload('/data/icons/language/language_20_16x16.png');
 	imgpreload('/data/icons/language/language_none_16x16.png');
 	imgpreload('/data/icons/stars/stars_0_16x16.png');
 	imgpreload('/data/icons/stars/stars_1_16x16.png');

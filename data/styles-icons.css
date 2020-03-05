@@ -28,6 +28,7 @@
 .lang-17 { background-image: url('/data/icons/language/language_17_16x16.png'); }
 .lang-18 { background-image: url('/data/icons/language/language_18_16x16.png'); }
 .lang-19 { background-image: url('/data/icons/language/language_19_16x16.png'); }
+.lang-20 { background-image: url('/data/icons/language/language_20_16x16.png'); }
 
 .lang-none { background-image: url('/data/icons/language/language_none_16x16.png'); }
 
@@ -92,6 +93,7 @@
 .score-4  { background-image: url('/data/icons/score/score_4_16x16.png'); }
 .score-5  { background-image: url('/data/icons/score/score_5_16x16.png'); }
 .score-6  { display: none; }
+.score-7  { background-image: url('/data/icons/score/score_7_16x16.png'); }
 
 .typ-0  { background-image: url('/data/icons/type/t0_16x16.png'); }
 .typ-1  { background-image: url('/data/icons/type/t1_16x16.png'); }
