@@ -16,11 +16,10 @@ foreach ($data as $dat)
 	$jdat =
 	[
 		'id'   => intval($dat['LOCALID']),
-		'sid'  => intval($dat['SERIESID']),
 		'cid'  => intval($dat['COVERID']),
 		'name' => $dat['NAME'],
-		'vwd'  => $dat['VIEWED']=='1',
-		'his'  => ($dat['VIEWED_HISTORY']=='') ? [] : explode(',', $dat['VIEWED_HISTORY']),
+		'vwd'  => ($dat['VIEWED_HISTORY']!==''),
+		'his'  => ($dat['VIEWED_HISTORY']==='') ? [] : explode(',', $dat['VIEWED_HISTORY']),
 		'zykl' => $dat['ZYKLUS'],
 		'znum' => $dat['ZYKLUSNUMBER'],
 		'oscr' => intval($dat['ONLINESCORE']),
@@ -42,7 +41,7 @@ foreach ($data as $dat)
 
 	if ($dat['TYPE']=='1')
 	{
-		$episodes = $db->sql_query_assoc("SELECT SEASONS.SEASONID AS tmp1,SEASONS.SERIESID AS tmp2,SEASONS.SEASONYEAR AS SYEAR,EPISODES.* FROM SEASONS INNER JOIN EPISODES ON SEASONS.SEASONID=EPISODES.SEASONID WHERE tmp2=".$dat['SERIESID']);
+		$episodes = $db->sql_query_assoc("SELECT SEASONS.SEASONID AS tmp1,SEASONS.SERIESID AS tmp2,SEASONS.SEASONYEAR AS SYEAR,EPISODES.* FROM SEASONS INNER JOIN EPISODES ON SEASONS.SEASONID=EPISODES.SEASONID WHERE tmp2=".$dat['LOCALID']);
 
 		$jdat['sepc'] = count($episodes);
 
@@ -58,8 +57,8 @@ foreach ($data as $dat)
 
 		$vtrue  = false;
 		$vfalse = false;
-		foreach ($episodes as $e) if ($e['VIEWED']==='1') $vtrue=true;
-		foreach ($episodes as $e) if ($e['VIEWED']==='0') $vfalse=true;
+		foreach ($episodes as $e) if ($e['VIEWED_HISTORY']!=='') $vtrue=true;
+		foreach ($episodes as $e) if ($e['VIEWED_HISTORY']==='') $vfalse=true;
 		     if (!$vtrue &&  $vfalse) $jdat['svwd'] = 0;
 		else if ( $vtrue && !$vfalse) $jdat['svwd'] = 1;
 		else if ( $vtrue &&  $vfalse) $jdat['svwd'] = 4;

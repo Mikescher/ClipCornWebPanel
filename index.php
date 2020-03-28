@@ -49,6 +49,7 @@
             <div id="sc_B" class="pshouldhide anyhidden"></div>
 
 		</div>
+
 		<div id="linksidebar">
 			<a href="https://ebooks.mikescher.com"     title="Ebooks"    ><img src="/data/icon_ebk.png"   /><span> Ebooks</span></a>
 			<a href="https://audiobooks.mikescher.com" title="Audiobooks"><img src="/data/icon_audio.png" /><span> Audiobooks</span></a>
@@ -82,7 +83,7 @@
 
         <div id="pagefooter" class="preloadfooter">
             <div class="FooterInfo">Script:<span id="InfoCommit">?</span></div>
-            <div class="FooterInfo">Version:<span id="InfoVersion">?</span></div>
+            <div class="FooterInfo">Schema:<span id="InfoVersion">?</span></div>
             <div class="FooterInfo">Creation Timestamp:<span id="InfoTimestamp">?</span></div>
             <div class="FooterInfo">UUID:<span id="InfoUUID">?</span></div>
             <div class="FooterInfo">Size:<span id="InfoSize">?</span></div>

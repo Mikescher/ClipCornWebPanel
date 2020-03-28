@@ -469,7 +469,7 @@ function addMovieEntry(e)
 
 function addSeriesEntry(e)
 {
-	let id = '___ser_entry_' + e['sid'] + '___';
+	let id = '___ser_entry_' + e['id'] + '___';
 
 	let html = '';
 
@@ -536,9 +536,9 @@ function addSeriesEntry(e)
 
 	html += '</div>';
 
-	html += '<div class="seriesdata" id="seriesdata__'+e['sid']+'">';
-	html += '<div id="seriesrippleloader__'+e['sid']+'" class="ripple lds-ripple2"><div></div><div></div><div></div></div>';
-	html += '<div class="seriesinnerdata" id="seriesinnerdata__'+e['sid']+'"></div>';
+	html += '<div class="seriesdata" id="seriesdata__'+e['id']+'">';
+	html += '<div id="seriesrippleloader__'+e['id']+'" class="ripple lds-ripple2"><div></div><div></div><div></div></div>';
+	html += '<div class="seriesinnerdata" id="seriesinnerdata__'+e['id']+'"></div>';
 	html += '</div>';
 
 	$("#maintable").append(html);
@@ -549,35 +549,35 @@ function addSeriesEntry(e)
 
 		if (me.hasClass('seriesentry_open')) { unshowSeries(); return; }
 
-		SEL_SER  = e['sid'];
+		SEL_SER  = e['id'];
 		SEL_SEAS = null;
 
-		$('#seriesinnerdata__' + e['sid']).html('');
+		$('#seriesinnerdata__' + e['id']).html('');
 
-		$('#seriesrippleloader__' + e['sid']).removeClass("anyhidden");
+		$('#seriesrippleloader__' + e['id']).removeClass("anyhidden");
 
 		$('.seriesentry').removeClass("seriesentry_open");
 		me.addClass("seriesentry_open");
 
 		$('.seriesdata').removeClass("seriesdata_open");
-		$('#seriesdata__'+e['sid']).addClass("seriesdata_open");
+		$('#seriesdata__'+e['id']).addClass("seriesdata_open");
 
-		$('#___ser_entry_' + e['sid'] + '___')[0].scrollIntoView(true);
+		$('#___ser_entry_' + e['id'] + '___')[0].scrollIntoView(true);
 
-		if (e['sid'] in SER_DATA) {
+		if (e['id'] in SER_DATA) {
 
-			showSeries(e['sid'], SER_DATA[e['sid']], null);
+			showSeries(e['id'], SER_DATA[e['id']], null);
 
 		} else {
 
 			$.ajax({
-				url: "/ajax/list_series.php?sid="+e['sid'],
+				url: "/ajax/list_series.php?id="+e['id'],
 				success: function(data)
 				{
 					let json = JSON.parse(data);
-					SER_DATA[e['sid']] = json;
+					SER_DATA[e['id']] = json;
 
-					if (SEL_SER === e['sid'] && SEL_SEAS === null) showSeries(e['sid'], json, null);
+					if (SEL_SER === e['id'] && SEL_SEAS === null) showSeries(e['id'], json, null);
 				}
 			});
 		}

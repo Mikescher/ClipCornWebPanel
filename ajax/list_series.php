@@ -4,14 +4,13 @@ require_once (__DIR__ . '/../model/Base.php');
 
 $db = Database::connect();
 
-$data_ser  = $db->sql_query_assoc("SELECT * FROM ELEMENTS WHERE SERIESID = " . intval($_GET['sid']))[0];
-$data_seas = $db->sql_query_assoc("SELECT * FROM SEASONS WHERE SERIESID = " . intval($_GET['sid']));
-$data_epis = $db->sql_query_assoc("SELECT SEASONS.SEASONID, EPISODES.* FROM EPISODES LEFT JOIN SEASONS ON EPISODES.SEASONID = SEASONS.SEASONID WHERE SERIESID = " . intval($_GET['sid']));
+$data_ser  = $db->sql_query_assoc("SELECT * FROM ELEMENTS WHERE LOCALID = " . intval($_GET['id']))[0];
+$data_seas = $db->sql_query_assoc("SELECT * FROM SEASONS WHERE SERIESID = " . intval($_GET['id']));
+$data_epis = $db->sql_query_assoc("SELECT SEASONS.SEASONID, EPISODES.* FROM EPISODES LEFT JOIN SEASONS ON EPISODES.SEASONID = SEASONS.SEASONID WHERE SERIESID = " . intval($_GET['id']));
 
 $json =
 [
 	'lid' => intval($data_ser['LOCALID']),
-	'sid' => intval($data_ser['SERIESID']),
 	'cid'  => intval($data_ser['COVERID']),
 	'name' => $data_ser['NAME'],
 ];
@@ -39,7 +38,7 @@ foreach ($data_seas as $dbseas)
 			'id'   => intval($dbepis['LOCALID']),
 			'epis' => intval($dbepis['EPISODE']),
 			'name' => $dbepis['NAME'],
-			'vwd'  => $dbepis['VIEWED']=='1',
+			'vwd'  => ($dbepis['VIEWED_HISTORY']!==''),
 			'his'  => ($dbepis['VIEWED_HISTORY']=='') ? [] : explode(',', $dbepis['VIEWED_HISTORY']),
 			//'qal'  => intval($dbepis['QUALITY']),
 			'len'  => intval($dbepis['LENGTH']),
