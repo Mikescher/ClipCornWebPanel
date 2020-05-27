@@ -2,6 +2,8 @@
 
 require_once (__DIR__ . '/../model/Base.php');
 
+Util::appendLog('AJAX', 'list_series');
+
 $db = Database::connect();
 
 $data_ser  = $db->sql_query_assoc("SELECT * FROM ELEMENTS WHERE LOCALID = " . intval($_GET['id']))[0];

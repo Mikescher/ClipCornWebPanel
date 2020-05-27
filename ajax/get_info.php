@@ -2,6 +2,8 @@
 
 require_once (__DIR__ . '/../model/Base.php');
 
+Util::appendLog('AJAX', 'get_info');
+
 $db = Database::connect();
 
 $data = $db->sql_query_assoc("SELECT * FROM INFO");

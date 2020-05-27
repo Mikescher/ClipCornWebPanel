@@ -2,6 +2,8 @@
 
 require_once (__DIR__ . '/../model/Base.php');
 
+Util::appendLog('AJAX', 'list_elements');
+
 $db = Database::connect();
 
 if (isset($_GET['limit']))

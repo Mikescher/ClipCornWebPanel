@@ -2,6 +2,8 @@
 
 require_once (__DIR__ . '/../model/Base.php');
 
+Util::appendLog('AJAX', 'get_cover');
+
 $db = Database::connect();
 
 $dbresult = $db->sql_query_single("SELECT PREVIEW FROM COVERS WHERE ID=".intval($_GET['cid']))['PREVIEW'];
