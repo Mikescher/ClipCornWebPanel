@@ -65,6 +65,8 @@ usort($json_seasons, function ($a, $b) { return $a['id'] <=> $b['id']; });
 
 $json['s'] = $json_seasons;
 
+header('Content-Type: application/json');
+
 if (isset($_GET['fmt']) && $_GET['fmt'] == '1')
 	echo json_encode($json, JSON_PRETTY_PRINT);
 else

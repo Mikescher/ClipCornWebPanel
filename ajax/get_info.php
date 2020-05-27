@@ -16,4 +16,5 @@ $json['FILESIZE'] = filesize(UserConfig::get("sqlite_path"));
 
 $json['COMMIT'] = strtoupper(substr(trim(exec("git rev-parse HEAD")), 0, 8));
 
+header('Content-Type: application/json');
 echo json_encode($json, JSON_PRETTY_PRINT);

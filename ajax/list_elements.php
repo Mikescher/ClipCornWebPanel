@@ -76,6 +76,8 @@ foreach ($data as $dat)
 
 usort($json, function ($a, $b) { return -strcmp($a['ser']?$a["sadd"]:$a["add"], $b['ser']?$b["sadd"]:$b["add"]); });
 
+header('Content-Type: application/json');
+
 if (isset($_GET['fmt']) && $_GET['fmt'] == '1')
 	echo json_encode($json, JSON_PRETTY_PRINT);
 else
