@@ -27,6 +27,7 @@ $(window).on('load', function()
 	$.ajax({
 		//url: "/ajax/list_elements.php?limit=100&fmt=1",
 		url: "/ajax/list_elements.php",
+		dataType: 'text',
 		success: function(data)
 		{
 			$("#pagefooter").removeClass('preloadfooter');
@@ -93,6 +94,7 @@ $(window).on('load', function()
 
 	$.ajax({
 		url: "/ajax/get_info.php",
+		dataType: 'text',
 		success: function(data)
 		{
 			let json = JSON.parse(data);
@@ -572,6 +574,7 @@ function addSeriesEntry(e)
 
 			$.ajax({
 				url: "/ajax/list_series.php?id="+e['id'],
+				dataType: 'text',
 				success: function(data)
 				{
 					let json = JSON.parse(data);

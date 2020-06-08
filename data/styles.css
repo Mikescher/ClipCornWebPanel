@@ -386,17 +386,17 @@ body {
 
 #footer a {
     color: #FFF;
-    background-color: #44F;
+    background-color: #004;
     padding: 6px;
     text-decoration: none;
-    border-radius: 8px;
-    font-size: 24pt;
+    border-radius: 2px;
+    font-size: 16pt;
     margin-bottom: 48px;
 }
 
 #footer a:hover {
     color: #FFF;
-    background-color: #00B;
+    background-color: #226;
 }
 
 #footer #prevpage {
@@ -405,6 +405,7 @@ body {
 
 #footer #nextpage {
     float: right;
+    font-family: Sans-serif;
 }
 
 #pagefooter {
