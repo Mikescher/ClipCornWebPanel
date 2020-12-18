@@ -56,10 +56,10 @@
 		</div>
 
 		<div id="linksidebar">
-			<a href="https://ebooks.mikescher.com"     title="Ebooks"    ><img src="/data/icon_ebk.png"   /><span> Ebooks</span></a>
-			<a href="https://audiobooks.mikescher.com" title="Audiobooks"><img src="/data/icon_audio.png" /><span> Audiobooks</span></a>
-			<a href="https://clipcorn.mikescher.com"   title="Movies"    ><img src="/data/icon_jcc.png"   /><span> Movies</span></a>
-            <a href="https://opds.mikescher.com"       title="Calibre"   ><img src="/data/icon_opds.png"  /><span> Calibre</span></a>
+			<a href="https://ebooks.zeugs.xyz"     title="Ebooks"    ><img src="/data/icon_ebk.png"   /><span> Ebooks</span></a>
+			<a href="https://audiobooks.zeugs.xyz" title="Audiobooks"><img src="/data/icon_audio.png" /><span> Audiobooks</span></a>
+			<a href="https://clipcorn.zeugs.xyz"   title="Movies"    ><img src="/data/icon_jcc.png"   /><span> Movies</span></a>
+            		<a href="https://opds.zeugs.xyz"       title="Calibre"   ><img src="/data/icon_opds.png"  /><span> Calibre</span></a>
 		</div>
 
 		<div id="content">
