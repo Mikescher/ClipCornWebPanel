@@ -6,9 +6,9 @@ Util::appendLog('AJAX', 'list_series');
 
 $db = Database::connect();
 
-$data_ser  = $db->sql_query_assoc("SELECT * FROM ELEMENTS WHERE LOCALID = " . intval($_GET['id']))[0];
+$data_ser  = $db->sql_query_assoc("SELECT * FROM SERIES WHERE LOCALID = " . intval($_GET['id']))[0];
 $data_seas = $db->sql_query_assoc("SELECT * FROM SEASONS WHERE SERIESID = " . intval($_GET['id']));
-$data_epis = $db->sql_query_assoc("SELECT SEASONS.SEASONID, EPISODES.* FROM EPISODES LEFT JOIN SEASONS ON EPISODES.SEASONID = SEASONS.SEASONID WHERE SERIESID = " . intval($_GET['id']));
+$data_epis = $db->sql_query_assoc("SELECT SEASONS.LOCALID, EPISODES.* FROM EPISODES LEFT JOIN SEASONS ON EPISODES.SEASONID = SEASONS.LOCALID WHERE SERIESID = " . intval($_GET['id']));
 
 $json =
 [
@@ -20,11 +20,11 @@ $json =
 $json_seasons = [];
 foreach ($data_seas as $dbseas)
 {
-	$seaid = intval($dbseas['SEASONID']);
+	$seaid = intval($dbseas['LOCALID']);
 
 	$jdat_seas =
 	[
-		'id'   => intval($dbseas['SEASONID']),
+		'id'   => intval($dbseas['LOCALID']),
 		'name' => $dbseas['NAME'],
 		'cid'  => intval($dbseas['COVERID']),
 		'year'  => intval($dbseas['SEASONYEAR']),

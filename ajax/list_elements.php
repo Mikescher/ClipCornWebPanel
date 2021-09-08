@@ -6,10 +6,12 @@ Util::appendLog('AJAX', 'list_elements');
 
 $db = Database::connect();
 
+$sql = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'list_elements.sql');
+
 if (isset($_GET['limit']))
-	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC LIMIT " . intval($_GET['limit']));
+	$data = $db->sql_query_assoc($sql . " LIMIT " . intval($_GET['limit']));
 else
-	$data = $db->sql_query_assoc("SELECT * FROM ELEMENTS ORDER BY ADDDATE DESC");
+	$data = $db->sql_query_assoc($sql);
 
 $json = [];
 
@@ -43,7 +45,7 @@ foreach ($data as $dat)
 
 	if ($dat['TYPE']=='1')
 	{
-		$episodes = $db->sql_query_assoc("SELECT SEASONS.SEASONID AS tmp1,SEASONS.SERIESID AS tmp2,SEASONS.SEASONYEAR AS SYEAR,EPISODES.* FROM SEASONS INNER JOIN EPISODES ON SEASONS.SEASONID=EPISODES.SEASONID WHERE tmp2=".$dat['LOCALID']);
+		$episodes = $db->sql_query_assoc("SELECT SEASONS.LOCALID AS tmp1,SEASONS.SERIESID AS tmp2,SEASONS.SEASONYEAR AS SYEAR,EPISODES.* FROM SEASONS INNER JOIN EPISODES ON SEASONS.LOCALID=EPISODES.SEASONID WHERE tmp2=".$dat['LOCALID']);
 
 		$jdat['sepc'] = count($episodes);
 
