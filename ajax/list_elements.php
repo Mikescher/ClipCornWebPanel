@@ -4,13 +4,20 @@ try
 {
 	require_once (__DIR__ . '/../model/Base.php');
 
-	Util::appendLog('AJAX', 'list_elements');
+	$fmt = $_GET['fmt'] ?? '0';
+	$lim = $_GET['limit'] ?? '';
+
+	$cachekey = 'list_elements.php?[' . $fmt . '|' . $lim . ']';
+
+	if (Cache::serve($cachekey, 'application/json')) { Util::appendLog('AJAX', 'list_elements', 'cached'); return; }
+
+	Util::appendLog('AJAX', 'list_elements', 'uncached');
 
 	$db = Database::connect();
 
 	$sql = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'list_elements.sql');
 
-	if (isset($_GET['limit']))
+	if ($lim !== '')
 		$data = $db->sql_query_assoc($sql . " LIMIT " . intval($_GET['limit']));
 	else
 		$data = $db->sql_query_assoc($sql);
@@ -84,10 +91,11 @@ try
 
 	header('Content-Type: application/json');
 
-	if (isset($_GET['fmt']) && $_GET['fmt'] == '1')
-		echo json_encode($json, JSON_PRETTY_PRINT);
-	else
-		echo json_encode($json);
+	$jsonstr = $fmt=='1' ? json_encode($json, JSON_PRETTY_PRINT) : json_encode($json);
+
+	Cache::put($cachekey, $jsonstr);
+
+	echo $jsonstr;
 }
 catch (Throwable $e)
 {

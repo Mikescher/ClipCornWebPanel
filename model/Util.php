@@ -59,15 +59,29 @@ class Util
 		else return 'UNKNOWN';
 	}
 
-	public static function appendLog(string $type, string $path)
+	public static function appendLog(string $type, string $path, string $info = '')
 	{
 		$line =
 			'[' . (new DateTime())->format('Y-m-d H:i:s') . '] ' .
 			str_pad($type, 6, ' ', STR_PAD_RIGHT) .
 			str_pad($path, 16, ' ', STR_PAD_RIGHT) .
+			(($info == '') ? ('') : (' (' . $info . ')')) .
 			str_pad(self::getClientIP(), 24, ' ', STR_PAD_RIGHT) .
-			(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
+			($_SERVER['HTTP_USER_AGENT'] ?? '');
 
 		file_put_contents(UserConfig::get('requestlog_path'), $line . PHP_EOL , FILE_APPEND | LOCK_EX);
+	}
+
+	public static function getCommitID(): string
+	{
+		$f_head = __DIR__ . '/../.git/HEAD';
+		$c_head = trim(file_get_contents($f_head));
+
+		$p_ref = str_replace("ref: ", "", $c_head);
+
+		$f_head = __DIR__ . '/../.git/' . $p_ref;
+		$c_head = trim(file_get_contents($f_head));
+
+		return $c_head;
 	}
 }
