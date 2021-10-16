@@ -10,14 +10,14 @@ class Cache
 		{
 			if ($enc !== null) header('Content-Type: ' . $enc);
 
-			header("X-ABWP-CacheFile: " . $cachefile);
+			header("X-CCWP-CacheFile: " . $cachefile);
 			header('Content-Encoding: gzip');
 			readfile($cachefile);
 			return true;
 		}
 		else
 		{
-			header("X-ABWP-CacheFile: NULL");
+			header("X-CCWP-CacheFile: NULL");
 			return false;
 		}
 	}
