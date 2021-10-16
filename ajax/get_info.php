@@ -1,20 +1,29 @@
 <?php
 
-require_once (__DIR__ . '/../model/Base.php');
+try
+{
+	require_once (__DIR__ . '/../model/Base.php');
 
-Util::appendLog('AJAX', 'get_info');
+	Util::appendLog('AJAX', 'get_info');
 
-$db = Database::connect();
+	$db = Database::connect();
 
-$data = $db->sql_query_assoc("SELECT * FROM INFO");
+	$data = $db->sql_query_assoc("SELECT * FROM INFO");
 
-$json = [];
+	$json = [];
 
-foreach ($data as $dat) $json[$dat["IKEY"]] = $dat["IVALUE"];
+	foreach ($data as $dat) $json[$dat["IKEY"]] = $dat["IVALUE"];
 
-$json['FILESIZE'] = filesize(UserConfig::get("sqlite_path"));
+	$json['FILESIZE'] = filesize(UserConfig::get("sqlite_path"));
 
-$json['COMMIT'] = strtoupper(substr(trim(exec("git rev-parse HEAD")), 0, 8));
+	$json['COMMIT'] = strtoupper(substr(trim(exec("git rev-parse HEAD")), 0, 8));
 
-header('Content-Type: application/json');
-echo json_encode($json, JSON_PRETTY_PRINT);
+	header('Content-Type: application/json');
+	echo json_encode($json, JSON_PRETTY_PRINT);
+}
+catch (Throwable $e)
+{
+	@header('Content-Type: text/plain');
+	@http_response_code(500);
+	echo $e;
+}

@@ -18,6 +18,18 @@ let FIRST = true;
 
 let INPUT_EVENT = 999;
 
+function ajax_error(xhr, status, err)
+{
+	$('#rippleloader').remove();
+	$('#root').addClass('error')
+	$("#maintable").empty().html(
+		'<div class="error-display">'+
+		'<span class="txt">An Error occured in list_elements.php</span>'+
+		'<span class="err">'+err + ' ('+status+')</span>'+
+		'<span class="responseText">'+xhr.responseText+'</span>'+
+		'</div>');
+}
+
 $(window).on('load', function()
 {
 	if (!SHOW_UD) $(".pshouldhide").addClass("anyhidden"); else $(".pshouldhide").removeClass("anyhidden");
@@ -89,7 +101,8 @@ $(window).on('load', function()
 			});
 
 			return data;
-		}
+		},
+		error: ajax_error,
 	});
 
 	$.ajax({
@@ -108,7 +121,8 @@ $(window).on('load', function()
 			$("#InfoCommit").text(json['COMMIT']);
 
 			return data;
-		}
+		},
+		error: ajax_error,
 	});
 
 	$("#AnchorSho").click(function() {
@@ -200,7 +214,7 @@ function collapseSidebar(v)
 	for(let i=0; i<12; i++)
 	{
 		if (arr[i] === null) continue;
-		
+
 		if (v !== i || arr[i].css('visibility')==='visible')
 		{
 			arr[i].css('visibility', 'collapse').css('display', 'none');
@@ -581,7 +595,8 @@ function addSeriesEntry(e)
 					SER_DATA[e['id']] = json;
 
 					if (SEL_SER === e['id'] && SEL_SEAS === null) showSeries(e['id'], json, null);
-				}
+				},
+				error: ajax_error,
 			});
 		}
 
