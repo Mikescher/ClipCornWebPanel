@@ -69,7 +69,7 @@ $(window).on('load', function()
 
 			setSidebarValues(false, groups, true, $('#sc_1'), null, null, function (e, v) { return e['grp'].includes(v); });
 			setSidebarValues(false, genres, true, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
-			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null, function (e, v) { return e['oscr'] === v; });
+			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], false, $('#sc_3'), 'onlinescore-', null, function (e, v) { return e['os_f'] === v; });
 			setSidebarValues(false, [6, 0, 1, 2, 7, 3, 4, 5], false, $('#sc_4'), 'score-', getScoreTitle, function (e, v) { return e['scr'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4], false, $('#sc_5'), 'fsk-', getFSKTitle, function (e, v) { return e['fsk'] === v; });
 			setSidebarValues(false, [0, 1, 2, 3, 4, 5, 6, 7, 8], false, $('#sc_6'), 'format-', getFormatTitle, function (e, v) { return !e['ser'] && e['fmt'] === v; });
@@ -444,7 +444,7 @@ function addMovieEntry(e)
 	for (let lng of e['lng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
 	if (e['lng'].length === 0)  html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
 	html += '</div>';
-	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
+	html += '<div class="onlinescore" title="' + e['os_n'] + ' / '+e['os_d']+'" ><i class="icn onlinescore-'+ e['os_f'] + '"></i></div>';
 	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i><i title="'+getFormatTitle(e['fmt'])+'" class="icn format-'+e['fmt']+'"></i></div>';
 	html += '<div class="tags">';
 	for (let tag of e['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
@@ -516,7 +516,7 @@ function addSeriesEntry(e)
 	for (let lng of e['slng']) html += '<i class="icn lang-'+ lng +'" title="' + getLangTitle(lng) + '" ></i>';
 	if (e['slng'].length === 0)  html += '<i class="icn lang-none" title="' + getLangTitle(-1) + '" ></i>';
 	html += '</div>';
-	html += '<div class="onlinescore" title="' + (e['oscr'] / 2) + ' / 10" ><i class="icn onlinescore-'+ e['oscr'] + '"></i></div>';
+	html += '<div class="onlinescore" title="' + e['os_n'] + ' / '+e['os_d']+'" ><i class="icn onlinescore-'+ e['os_f'] + '"></i></div>';
 	html += '<div class="quality_fsk_format"><i title="'+getFSKTitle(e['fsk'])+'" class="icn fsk-'+e['fsk']+'"></i></div>';
 	html += '<div class="tags">';
 	for (let tag of e['tgs']) html += '<i title="'+getTagTitle(tag)+'" class="icn tag-'+tag+'"></i>';
