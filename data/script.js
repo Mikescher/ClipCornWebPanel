@@ -66,6 +66,7 @@ $(window).on('load', function()
 
 			$('#rippleloader').remove();
 			$("#footer").css('display', 'block');
+			$("#root").addClass('with_footer');
 
 			setSidebarValues(false, groups, true, $('#sc_1'), null, null, function (e, v) { return e['grp'].includes(v); });
 			setSidebarValues(false, genres, true, $('#sc_2'), null, getGenreTitle, function (e, v) { return e['gnr'].includes(v); });
