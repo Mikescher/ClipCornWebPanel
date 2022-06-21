@@ -62,7 +62,7 @@ body {
 #content {
     margin-left: 250px;
 
-    min-height: 100vh;
+    height: calc(100vh - 26px - 1px);
     width: auto;
     position: relative;
     overflow: auto;
@@ -291,7 +291,7 @@ body {
 
     position: fixed;
     width: 250px;
-    height: calc(100% - 60px);
+    height: calc(100% - 60px - 26px);
 
     display: flex;
     flex-direction: column;
@@ -781,7 +781,7 @@ body {
     position: fixed;
     width: 250px;
     height: auto;
-    bottom: 0;
+    bottom: 26px;
 
     display: flex;
     flex-direction: row;
