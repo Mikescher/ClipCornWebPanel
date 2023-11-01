@@ -59,7 +59,8 @@
 			<a href="https://ebooks.zeugs.xyz"     title="Ebooks"    ><img src="/data/icon_ebk.png"   /><span> Ebooks</span></a>
 			<a href="https://audiobooks.zeugs.xyz" title="Audiobooks"><img src="/data/icon_audio.png" /><span> Audiobooks</span></a>
 			<a href="https://clipcorn.zeugs.xyz"   title="Movies"    ><img src="/data/icon_jcc.png"   /><span> Movies</span></a>
-            		<a href="https://opds.zeugs.xyz"       title="Calibre"   ><img src="/data/icon_opds.png"  /><span> Calibre</span></a>
+			<a href="https://opds.zeugs.xyz"       title="Calibre"   ><img src="/data/icon_opds.png"  /><span> Calibre</span></a>
+			<a href="https://music.zeugs.xyz"      title="Music"     ><img src="/data/icon_mply.png"  /><span> Music</span></a>
 		</div>
 
 		<div id="content">

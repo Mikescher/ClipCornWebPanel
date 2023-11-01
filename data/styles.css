@@ -292,7 +292,7 @@ body {
 
     position: fixed;
     width: 250px;
-    height: calc(100% - 60px);
+    height: calc(100% - 50px);
 
     display: flex;
     flex-direction: column;
@@ -301,7 +301,7 @@ body {
     overflow: auto;
     /*! bottom: 24px; */
 }
-#root.with_footer > #sidebar { height: calc(100% - 60px - 26px); }
+#root.with_footer > #sidebar { height: calc(100% - 50px - 26px); }
 
 #sidebar #sb_0 {
     font-weight: bold;
@@ -803,8 +803,8 @@ body {
 }
 
 #linksidebar > a > img {
-    height: 40px;
-    width:  40px;
+    height: 30px;
+    width:  30px;
     margin: 4px;
 }
 
