@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  clipcorn-web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_PATH=/data/ClipCornDB.db
+      - NODE_ENV=production
+    volumes:
+      - ./database.db:/data/ClipCornDB.db:ro
+    restart: unless-stopped
