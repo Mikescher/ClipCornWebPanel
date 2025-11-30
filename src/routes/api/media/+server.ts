@@ -1,16 +1,9 @@
-import type { PageServerLoad } from './$types';
-import {
-  getAllMedia,
-  getGroups,
-  getDistinctYears,
-  getDistinctAnimeSeasons,
-  getDistinctAnimeStudios,
-  getDistinctVersions,
-  getStats
-} from '$lib/server/queries';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { getAllMedia } from '$lib/server/queries';
 import type { FilterParams } from '$lib/server/queries';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const GET: RequestHandler = async ({ url }) => {
   const page = parseInt(url.searchParams.get('page') || '0');
 
   const filters: FilterParams = {
@@ -30,22 +23,6 @@ export const load: PageServerLoad = async ({ url }) => {
   };
 
   const { items, hasMore } = getAllMedia(filters, page);
-  const groups = getGroups();
-  const years = getDistinctYears();
-  const animeSeasons = getDistinctAnimeSeasons();
-  const animeStudios = getDistinctAnimeStudios();
-  const versions = getDistinctVersions();
-  const stats = getStats();
 
-  return {
-    items,
-    page,
-    hasMore,
-    groups,
-    years,
-    animeSeasons,
-    animeStudios,
-    versions,
-    stats
-  };
+  return json({ items, hasMore, page });
 };

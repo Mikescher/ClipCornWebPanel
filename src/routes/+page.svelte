@@ -3,12 +3,83 @@
   import { page } from '$app/stores';
   import { filters, filtersToParams, paramsToFilters } from '$lib/stores/filters';
   import type { PageData } from './$types';
+  import type { MediaItem } from '$lib/server/queries';
   import Header from '$lib/components/layout/Header.svelte';
   import ViewToggle from '$lib/components/layout/ViewToggle.svelte';
   import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
   import MediaCard from '$lib/components/cards/MediaCard.svelte';
 
   let { data }: { data: PageData } = $props();
+
+  // Accumulated items for infinite scroll
+  let allItems = $state<MediaItem[]>([]);
+  let currentPage = $state(0);
+  let isLoading = $state(false);
+  let hasMore = $state(true);
+
+  // Track filter string to detect filter changes
+  let lastFilterString = $state('');
+
+  // Reset items when filters change
+  $effect(() => {
+    const filterString = filtersToParams($filters).toString();
+    if (filterString !== lastFilterString) {
+      lastFilterString = filterString;
+      allItems = [...data.items];
+      currentPage = data.page;
+      hasMore = data.hasMore;
+    }
+  });
+
+  // Also reset when data changes from server (initial load or filter change)
+  $effect(() => {
+    // If this is page 0 data, it's a fresh load (filters changed or initial)
+    if (data.page === 0) {
+      allItems = [...data.items];
+      currentPage = 0;
+      hasMore = data.hasMore;
+    }
+  });
+
+  // Set up scroll listener for infinite scroll
+  $effect(() => {
+    function onScroll() {
+      const scrollBottom = window.scrollY + window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const remaining = docHeight - scrollBottom;
+
+      if (remaining < 1024 && hasMore && !isLoading) {
+        loadMore();
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // Check immediately on mount
+    return () => window.removeEventListener('scroll', onScroll);
+  });
+
+  async function loadMore() {
+    if (isLoading || !hasMore) return;
+
+    isLoading = true;
+    const nextPage = currentPage + 1;
+
+    try {
+      const params = filtersToParams($filters);
+      params.set('page', String(nextPage));
+
+      const response = await fetch(`/api/media?${params.toString()}`);
+      const result = await response.json();
+
+      allItems = [...allItems, ...result.items];
+      currentPage = nextPage;
+      hasMore = result.hasMore;
+    } catch (error) {
+      console.error('Failed to load more items:', error);
+    } finally {
+      isLoading = false;
+    }
+  }
 
   // Track if we're currently syncing to prevent loops
   let isSyncingFromUrl = false;
@@ -17,7 +88,7 @@
   // Initialize filters from URL on mount and when URL changes externally
   $effect(() => {
     const urlFilters = paramsToFilters($page.url.searchParams);
-    if (isSyncingToUrl) return; // Skip if we caused this URL change
+    if (isSyncingToUrl) return;
     isSyncingFromUrl = true;
     filters.set(urlFilters);
     isSyncingFromUrl = false;
@@ -26,38 +97,19 @@
   // Navigate when filters change (from user interaction)
   $effect(() => {
     const currentFilters = $filters;
-    if (isSyncingFromUrl) return; // Skip if URL caused this filter change
+    if (isSyncingFromUrl) return;
     const params = filtersToParams(currentFilters);
-    // Preserve the page parameter from the current URL
-    const currentPage = $page.url.searchParams.get('page');
-    if (currentPage) {
-      params.set('page', currentPage);
-    }
-    const currentSearch = $page.url.searchParams.toString();
+    const currentParams = new URLSearchParams($page.url.searchParams);
+    currentParams.delete('page'); // Remove page param for comparison
+    const currentSearch = currentParams.toString();
     const newSearch = params.toString();
-    if (currentSearch === newSearch) return; // No change needed
+    if (currentSearch === newSearch) return;
     isSyncingToUrl = true;
     const newUrl = newSearch ? `?${newSearch}` : '/';
     goto(newUrl, { replaceState: true, noScroll: true }).finally(() => {
       isSyncingToUrl = false;
     });
   });
-
-  function nextPage() {
-    const params = new URLSearchParams($page.url.searchParams);
-    params.set('page', String(data.page + 1));
-    goto(`?${params.toString()}`);
-  }
-
-  function prevPage() {
-    const params = new URLSearchParams($page.url.searchParams);
-    if (data.page > 0) {
-      params.set('page', String(data.page - 1));
-    } else {
-      params.delete('page');
-    }
-    goto(`?${params.toString()}`);
-  }
 </script>
 
 <Header />
@@ -66,23 +118,21 @@
 
 <main class="main">
   <div class="card-list">
-    {#each data.items as item (item.id + '-' + item.type)}
+    {#each allItems as item (item.id + '-' + item.type)}
       <MediaCard {item} />
     {/each}
   </div>
 
-  {#if data.items.length === 0}
+  {#if allItems.length === 0 && !isLoading}
     <div class="empty">
       <p>No results found.</p>
       <p>Try adjusting your filters.</p>
     </div>
   {/if}
 
-  <div class="pagination">
-    <button onclick={prevPage} disabled={data.page === 0}>← Previous</button>
-    <span class="page-info">Page {data.page + 1}/{data.totalPages}</span>
-    <button onclick={nextPage} disabled={!data.hasMore}>Next →</button>
-  </div>
+  {#if isLoading}
+    <div class="loading">Loading...</div>
+  {/if}
 </main>
 
 <ViewToggle />
@@ -110,35 +160,10 @@
     margin-bottom: 0.5rem;
   }
 
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding: 1rem;
-  }
-
-  .pagination button {
-    padding: 0.5rem 1rem;
-    background: #2a2a3a;
-    border-radius: 8px;
-    color: #cbd5e1;
-    transition: background 0.15s;
-  }
-
-  .pagination button:hover:not(:disabled) {
-    background: #363648;
-  }
-
-  .pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .page-info {
+  .loading {
+    text-align: center;
+    padding: 2rem;
     color: #94a3b8;
-    font-size: 0.9rem;
   }
 
   /* Desktop: adjust for sidebar */

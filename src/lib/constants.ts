@@ -110,7 +110,7 @@ export const GENRES = [
   'Seinen'
 ] as const;
 
-export const PAGE_SIZE = 48;
+export const PAGE_SIZE = 512;
 
 export type Language = (typeof LANGUAGES)[number];
 export type FskRating = (typeof FSK_RATINGS)[number];
