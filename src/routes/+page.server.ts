@@ -9,6 +9,7 @@ import {
   getStats
 } from '$lib/server/queries';
 import type { FilterParams } from '$lib/server/queries';
+import { PAGE_SIZE } from '$lib/constants';
 
 export const load: PageServerLoad = async ({ url }) => {
   const page = parseInt(url.searchParams.get('page') || '0');
@@ -29,18 +30,20 @@ export const load: PageServerLoad = async ({ url }) => {
     version: url.searchParams.get('version') || undefined
   };
 
-  const { items, hasMore } = getAllMedia(filters, page);
+  const { items, hasMore, totalCount } = getAllMedia(filters, page);
   const groups = getGroups();
   const years = getDistinctYears();
   const animeSeasons = getDistinctAnimeSeasons();
   const animeStudios = getDistinctAnimeStudios();
   const versions = getDistinctVersions();
   const stats = getStats();
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return {
     items,
     page,
     hasMore,
+    totalPages,
     groups,
     years,
     animeSeasons,

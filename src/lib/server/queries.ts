@@ -138,44 +138,44 @@ export interface MediaItem {
   totalFilesize?: number;
 }
 
-export function getMovies(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean } {
+export function getMovies(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   const db = getDb();
-  let query = 'SELECT * FROM MOVIES WHERE 1=1';
+  let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
 
   if (filters.search) {
-    query += ` AND (NAME LIKE ? OR ZYKLUS LIKE ? OR GROUPS LIKE ?)`;
+    whereClause += ` AND (NAME LIKE ? OR ZYKLUS LIKE ? OR GROUPS LIKE ?)`;
     const searchPattern = `%${filters.search}%`;
     params.push(searchPattern, searchPattern, searchPattern);
   }
 
   if (filters.group) {
-    query += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
+    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
     params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
   }
 
   if (filters.language !== undefined) {
-    query += ` AND (LANGUAGE & ?) != 0`;
+    whereClause += ` AND (LANGUAGE & ?) != 0`;
     params.push(1 << filters.language);
   }
 
   if (filters.fsk !== undefined) {
-    query += ` AND FSK = ?`;
+    whereClause += ` AND FSK = ?`;
     params.push(filters.fsk);
   }
 
   if (filters.format !== undefined) {
-    query += ` AND FORMAT = ?`;
+    whereClause += ` AND FORMAT = ?`;
     params.push(filters.format);
   }
 
   if (filters.score !== undefined) {
-    query += ` AND SCORE = ?`;
+    whereClause += ` AND SCORE = ?`;
     params.push(filters.score);
   }
 
   if (filters.year !== undefined) {
-    query += ` AND MOVIEYEAR = ?`;
+    whereClause += ` AND MOVIEYEAR = ?`;
     params.push(filters.year);
   }
 
@@ -188,60 +188,66 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
       params.push(i * 8, filters.genre);
     }
     genreQuery += ')';
-    query += ` AND ${genreQuery}`;
+    whereClause += ` AND ${genreQuery}`;
   }
 
   if (filters.animeseason) {
-    query += ` AND ANIMESEASON LIKE ?`;
+    whereClause += ` AND ANIMESEASON LIKE ?`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    query += ` AND ANIMESTUDIO LIKE ?`;
+    whereClause += ` AND ANIMESTUDIO LIKE ?`;
     params.push(`%${filters.animestudio}%`);
   }
 
   if (filters.version) {
-    query += ` AND SPECIALVERSION LIKE ?`;
+    whereClause += ` AND SPECIALVERSION LIKE ?`;
     params.push(`%${filters.version}%`);
   }
 
-  query += ` ORDER BY ADDDATE DESC LIMIT ? OFFSET ?`;
-  params.push(PAGE_SIZE + 1, page * PAGE_SIZE);
+  // Get total count
+  const countQuery = `SELECT COUNT(*) as count FROM MOVIES ${whereClause}`;
+  const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
-  const rows = db.prepare(query).all(...params) as MovieRow[];
+  // Get paginated results
+  const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC LIMIT ? OFFSET ?`;
+  const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
+
+  const rows = db.prepare(query).all(...paginatedParams) as MovieRow[];
   const hasMore = rows.length > PAGE_SIZE;
   const items = rows.slice(0, PAGE_SIZE);
 
   return {
     items: items.map((row) => movieRowToMediaItem(row)),
-    hasMore
+    hasMore,
+    totalCount
   };
 }
 
-export function getSeries(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean } {
+export function getSeries(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   const db = getDb();
-  let query = 'SELECT * FROM SERIES WHERE 1=1';
+  let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
 
   if (filters.search) {
-    query += ` AND (NAME LIKE ? OR GROUPS LIKE ?)`;
+    whereClause += ` AND (NAME LIKE ? OR GROUPS LIKE ?)`;
     const searchPattern = `%${filters.search}%`;
     params.push(searchPattern, searchPattern);
   }
 
   if (filters.group) {
-    query += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
+    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
     params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
   }
 
   if (filters.fsk !== undefined) {
-    query += ` AND FSK = ?`;
+    whereClause += ` AND FSK = ?`;
     params.push(filters.fsk);
   }
 
   if (filters.score !== undefined) {
-    query += ` AND SCORE = ?`;
+    whereClause += ` AND SCORE = ?`;
     params.push(filters.score);
   }
 
@@ -253,28 +259,33 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
       params.push(i * 8, filters.genre);
     }
     genreQuery += ')';
-    query += ` AND ${genreQuery}`;
+    whereClause += ` AND ${genreQuery}`;
   }
 
   if (filters.animeseason) {
-    query += ` AND ANIMESEASON LIKE ?`;
+    whereClause += ` AND ANIMESEASON LIKE ?`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    query += ` AND ANIMESTUDIO LIKE ?`;
+    whereClause += ` AND ANIMESTUDIO LIKE ?`;
     params.push(`%${filters.animestudio}%`);
   }
 
   if (filters.version) {
-    query += ` AND SPECIALVERSION LIKE ?`;
+    whereClause += ` AND SPECIALVERSION LIKE ?`;
     params.push(`%${filters.version}%`);
   }
 
-  query += ` ORDER BY NAME ASC LIMIT ? OFFSET ?`;
-  params.push(PAGE_SIZE + 1, page * PAGE_SIZE);
+  // Get total count
+  const countQuery = `SELECT COUNT(*) as count FROM SERIES ${whereClause}`;
+  const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
-  const rows = db.prepare(query).all(...params) as SeriesRow[];
+  // Get paginated results
+  const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC LIMIT ? OFFSET ?`;
+  const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
+
+  const rows = db.prepare(query).all(...paginatedParams) as SeriesRow[];
   const hasMore = rows.length > PAGE_SIZE;
   const items = rows.slice(0, PAGE_SIZE);
 
@@ -284,11 +295,12 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
 
   return {
     items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID))),
-    hasMore
+    hasMore,
+    totalCount
   };
 }
 
-export function getAllMedia(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean } {
+export function getAllMedia(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   if (filters.type === 'movie') {
     return getMovies(filters, page);
   }
@@ -296,12 +308,12 @@ export function getAllMedia(filters: FilterParams, page: number): { items: Media
     return getSeries(filters, page);
   }
 
-  // Get both movies and series, interleaved by date
-  const movies = getMovies(filters, 0);
-  const series = getSeries(filters, 0);
+  // Get both movies and series (all items, no pagination)
+  const movies = getAllMoviesUnpaginated(filters);
+  const series = getAllSeriesUnpaginated(filters);
 
-  // Combine and sort by addDate (descending) or name
-  const all = [...movies.items, ...series.items];
+  // Combine and sort by addDate (descending)
+  const all = [...movies, ...series];
   all.sort((a, b) => {
     const dateA = a.addDate || '1970-01-01';
     const dateB = b.addDate || '1970-01-01';
@@ -311,8 +323,144 @@ export function getAllMedia(filters: FilterParams, page: number): { items: Media
   const start = page * PAGE_SIZE;
   const items = all.slice(start, start + PAGE_SIZE);
   const hasMore = all.length > start + PAGE_SIZE;
+  const totalCount = all.length;
 
-  return { items, hasMore };
+  return { items, hasMore, totalCount };
+}
+
+function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
+  const db = getDb();
+  let whereClause = 'WHERE 1=1';
+  const params: (string | number)[] = [];
+
+  if (filters.search) {
+    whereClause += ` AND (NAME LIKE ? OR ZYKLUS LIKE ? OR GROUPS LIKE ?)`;
+    const searchPattern = `%${filters.search}%`;
+    params.push(searchPattern, searchPattern, searchPattern);
+  }
+
+  if (filters.group) {
+    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
+    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+  }
+
+  if (filters.language !== undefined) {
+    whereClause += ` AND (LANGUAGE & ?) != 0`;
+    params.push(1 << filters.language);
+  }
+
+  if (filters.fsk !== undefined) {
+    whereClause += ` AND FSK = ?`;
+    params.push(filters.fsk);
+  }
+
+  if (filters.format !== undefined) {
+    whereClause += ` AND FORMAT = ?`;
+    params.push(filters.format);
+  }
+
+  if (filters.score !== undefined) {
+    whereClause += ` AND SCORE = ?`;
+    params.push(filters.score);
+  }
+
+  if (filters.year !== undefined) {
+    whereClause += ` AND MOVIEYEAR = ?`;
+    params.push(filters.year);
+  }
+
+  if (filters.genre !== undefined) {
+    let genreQuery = '(';
+    for (let i = 0; i < 8; i++) {
+      if (i > 0) genreQuery += ' OR ';
+      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
+      params.push(i * 8, filters.genre);
+    }
+    genreQuery += ')';
+    whereClause += ` AND ${genreQuery}`;
+  }
+
+  if (filters.animeseason) {
+    whereClause += ` AND ANIMESEASON LIKE ?`;
+    params.push(`%${filters.animeseason}%`);
+  }
+
+  if (filters.animestudio) {
+    whereClause += ` AND ANIMESTUDIO LIKE ?`;
+    params.push(`%${filters.animestudio}%`);
+  }
+
+  if (filters.version) {
+    whereClause += ` AND SPECIALVERSION LIKE ?`;
+    params.push(`%${filters.version}%`);
+  }
+
+  const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC`;
+  const rows = db.prepare(query).all(...params) as MovieRow[];
+
+  return rows.map((row) => movieRowToMediaItem(row));
+}
+
+function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
+  const db = getDb();
+  let whereClause = 'WHERE 1=1';
+  const params: (string | number)[] = [];
+
+  if (filters.search) {
+    whereClause += ` AND (NAME LIKE ? OR GROUPS LIKE ?)`;
+    const searchPattern = `%${filters.search}%`;
+    params.push(searchPattern, searchPattern);
+  }
+
+  if (filters.group) {
+    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
+    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+  }
+
+  if (filters.fsk !== undefined) {
+    whereClause += ` AND FSK = ?`;
+    params.push(filters.fsk);
+  }
+
+  if (filters.score !== undefined) {
+    whereClause += ` AND SCORE = ?`;
+    params.push(filters.score);
+  }
+
+  if (filters.genre !== undefined) {
+    let genreQuery = '(';
+    for (let i = 0; i < 8; i++) {
+      if (i > 0) genreQuery += ' OR ';
+      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
+      params.push(i * 8, filters.genre);
+    }
+    genreQuery += ')';
+    whereClause += ` AND ${genreQuery}`;
+  }
+
+  if (filters.animeseason) {
+    whereClause += ` AND ANIMESEASON LIKE ?`;
+    params.push(`%${filters.animeseason}%`);
+  }
+
+  if (filters.animestudio) {
+    whereClause += ` AND ANIMESTUDIO LIKE ?`;
+    params.push(`%${filters.animestudio}%`);
+  }
+
+  if (filters.version) {
+    whereClause += ` AND SPECIALVERSION LIKE ?`;
+    params.push(`%${filters.version}%`);
+  }
+
+  const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC`;
+  const rows = db.prepare(query).all(...params) as SeriesRow[];
+
+  // Get aggregated data for all series
+  const seriesIds = rows.map((s) => s.LOCALID);
+  const aggregates = getSeriesAggregates(seriesIds);
+
+  return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID)));
 }
 
 function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> {

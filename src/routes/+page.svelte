@@ -10,24 +10,37 @@
 
   let { data }: { data: PageData } = $props();
 
-  // Initialize filters from URL on mount
+  // Track if we're currently syncing to prevent loops
+  let isSyncingFromUrl = false;
+  let isSyncingToUrl = false;
+
+  // Initialize filters from URL on mount and when URL changes externally
   $effect(() => {
     const urlFilters = paramsToFilters($page.url.searchParams);
+    if (isSyncingToUrl) return; // Skip if we caused this URL change
+    isSyncingFromUrl = true;
     filters.set(urlFilters);
+    isSyncingFromUrl = false;
   });
 
-  // Navigate when filters change
-  let isFirstRun = true;
+  // Navigate when filters change (from user interaction)
   $effect(() => {
     const currentFilters = $filters;
-    // Skip the initial effect run
-    if (isFirstRun) {
-      isFirstRun = false;
-      return;
-    }
+    if (isSyncingFromUrl) return; // Skip if URL caused this filter change
     const params = filtersToParams(currentFilters);
-    const newUrl = params.toString() ? `?${params.toString()}` : '/';
-    goto(newUrl, { replaceState: true, noScroll: true });
+    // Preserve the page parameter from the current URL
+    const currentPage = $page.url.searchParams.get('page');
+    if (currentPage) {
+      params.set('page', currentPage);
+    }
+    const currentSearch = $page.url.searchParams.toString();
+    const newSearch = params.toString();
+    if (currentSearch === newSearch) return; // No change needed
+    isSyncingToUrl = true;
+    const newUrl = newSearch ? `?${newSearch}` : '/';
+    goto(newUrl, { replaceState: true, noScroll: true }).finally(() => {
+      isSyncingToUrl = false;
+    });
   });
 
   function nextPage() {
@@ -52,12 +65,6 @@
 <FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} />
 
 <main class="main">
-  <div class="stats">
-    <span>{data.stats.movies} Movies</span>
-    <span>{data.stats.series} Series</span>
-    <span>{data.stats.episodes} Episodes</span>
-  </div>
-
   <div class="card-list">
     {#each data.items as item (item.id + '-' + item.type)}
       <MediaCard {item} />
@@ -73,7 +80,7 @@
 
   <div class="pagination">
     <button onclick={prevPage} disabled={data.page === 0}>← Previous</button>
-    <span class="page-info">Page {data.page + 1}</span>
+    <span class="page-info">Page {data.page + 1}/{data.totalPages}</span>
     <button onclick={nextPage} disabled={!data.hasMore}>Next →</button>
   </div>
 </main>
@@ -84,15 +91,6 @@
   .main {
     padding: 1rem;
     padding-bottom: 5rem;
-  }
-
-  .stats {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1rem;
-    font-size: 0.85rem;
-    color: #94a3b8;
   }
 
   .card-list {
