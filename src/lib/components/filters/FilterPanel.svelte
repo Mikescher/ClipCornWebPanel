@@ -341,5 +341,9 @@
       transform: none;
       border-right: 1px solid #2a2a3a;
     }
+
+    .close-btn {
+      display: none;
+    }
   }
 </style>

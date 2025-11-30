@@ -1,16 +1,13 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, SCORES, TAGS } from '$lib/constants';
-  import { toRoman, formatSize, formatLength, formatDate, parseViewedHistory } from '$lib/utils/format';
-  import { showViewedData } from '$lib/stores/ui';
+  import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, TAGS } from '$lib/constants';
+  import { toRoman, formatSize, formatLength, formatDate } from '$lib/utils/format';
   import CoverImage from '$lib/components/cards/CoverImage.svelte';
   import LanguageIcon from '$lib/components/icons/LanguageIcon.svelte';
   import FormatIcon from '$lib/components/icons/FormatIcon.svelte';
   import FskIcon from '$lib/components/icons/FskIcon.svelte';
-  import ScoreIcon from '$lib/components/icons/ScoreIcon.svelte';
   import StarsIcon from '$lib/components/icons/StarsIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
-  import ViewToggle from '$lib/components/layout/ViewToggle.svelte';
 
   let { data }: { data: PageData } = $props();
   const movie = data.movie;
@@ -22,7 +19,6 @@
       : movie.name;
 
   const genreNames = movie.genres.map((g) => (g < GENRES.length ? GENRES[g] : `Genre ${g}`));
-  const { viewed, history } = parseViewedHistory(movie.viewedHistory || '');
 </script>
 
 <svelte:head>
@@ -91,15 +87,6 @@
               {movie.onlineScoreDenom > 0 ? Math.round((movie.onlineScoreNum / movie.onlineScoreDenom) * 100) : 0}%
             </span>
           </div>
-          {#if $showViewedData && movie.score !== 6}
-            <div class="info-item">
-              <span class="label">User Score</span>
-              <span class="value">
-                <ScoreIcon score={movie.score} />
-                {SCORES[movie.score] || 'Unknown'}
-              </span>
-            </div>
-          {/if}
         </div>
       </div>
 
@@ -188,27 +175,9 @@
         </div>
       {/if}
 
-      <!-- Viewed History -->
-      {#if $showViewedData}
-        <div class="info-group">
-          <h2>Viewed History</h2>
-          {#if viewed}
-            <p class="viewed-count">Viewed {history.length} time{history.length !== 1 ? 's' : ''}</p>
-            <ul class="history-list">
-              {#each history as date}
-                <li>{date}</li>
-              {/each}
-            </ul>
-          {:else}
-            <p class="not-viewed">Not viewed</p>
-          {/if}
-        </div>
-      {/if}
     </div>
   </div>
 </div>
-
-<ViewToggle />
 
 <style>
   .page {
@@ -341,26 +310,6 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.85rem;
-  }
-
-  .viewed-count {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .history-list {
-    list-style: none;
-    font-size: 0.85rem;
-    color: #94a3b8;
-  }
-
-  .history-list li {
-    padding: 0.25rem 0;
-  }
-
-  .not-viewed {
-    color: #94a3b8;
-    font-size: 0.9rem;
   }
 
   @media (min-width: 640px) {

@@ -1,17 +1,13 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, SCORES, TAGS } from '$lib/constants';
-  import { formatSize, formatLength, formatLengthShort, formatDate, parseViewedHistory } from '$lib/utils/format';
-  import { showViewedData } from '$lib/stores/ui';
+  import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, TAGS } from '$lib/constants';
+  import { formatSize, formatLength, formatLengthShort } from '$lib/utils/format';
   import CoverImage from '$lib/components/cards/CoverImage.svelte';
   import LanguageIcon from '$lib/components/icons/LanguageIcon.svelte';
   import FormatIcon from '$lib/components/icons/FormatIcon.svelte';
   import FskIcon from '$lib/components/icons/FskIcon.svelte';
-  import ScoreIcon from '$lib/components/icons/ScoreIcon.svelte';
   import StarsIcon from '$lib/components/icons/StarsIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
-  import ViewedIcon from '$lib/components/icons/ViewedIcon.svelte';
-  import ViewToggle from '$lib/components/layout/ViewToggle.svelte';
 
   let { data }: { data: PageData } = $props();
   const series = data.series;
@@ -93,15 +89,6 @@
               {series.onlineScoreDenom > 0 ? Math.round((series.onlineScoreNum / series.onlineScoreDenom) * 100) : 0}%
             </span>
           </div>
-          {#if $showViewedData && series.score !== 6}
-            <div class="info-item">
-              <span class="label">User Score</span>
-              <span class="value">
-                <ScoreIcon score={series.score} />
-                {SCORES[series.score] || 'Unknown'}
-              </span>
-            </div>
-          {/if}
         </div>
       </div>
 
@@ -205,16 +192,12 @@
                 <th class="col-size">Size</th>
                 <th class="col-lang">Lang</th>
                 <th class="col-format">Format</th>
-                {#if $showViewedData}
-                  <th class="col-viewed">Viewed</th>
-                {/if}
               </tr>
             </thead>
             <tbody>
               {#each selectedSeason.episodes as episode}
                 {@const epLanguages = getLanguagesFromBitmask(episode.LANGUAGE)}
-                {@const { viewed } = parseViewedHistory(episode.VIEWED_HISTORY)}
-                <tr class:viewed={viewed && $showViewedData}>
+                <tr>
                   <td class="col-ep">{episode.EPISODE}</td>
                   <td class="col-name">{episode.NAME}</td>
                   <td class="col-length">{formatLengthShort(episode.LENGTH)}</td>
@@ -227,11 +210,6 @@
                   <td class="col-format">
                     <FormatIcon format={episode.FORMAT} />
                   </td>
-                  {#if $showViewedData}
-                    <td class="col-viewed">
-                      <ViewedIcon viewedHistory={episode.VIEWED_HISTORY} />
-                    </td>
-                  {/if}
                 </tr>
               {/each}
             </tbody>
@@ -241,8 +219,6 @@
     </div>
   {/if}
 </div>
-
-<ViewToggle />
 
 <style>
   .page {
@@ -438,10 +414,6 @@
     text-transform: uppercase;
   }
 
-  .episodes-table tr.viewed {
-    background: rgba(59, 130, 246, 0.1);
-  }
-
   .col-ep {
     width: 40px;
     text-align: center;
@@ -454,8 +426,7 @@
   .col-length,
   .col-size,
   .col-lang,
-  .col-format,
-  .col-viewed {
+  .col-format {
     width: 80px;
     white-space: nowrap;
   }
