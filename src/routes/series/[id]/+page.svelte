@@ -255,8 +255,9 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #16213e;
-    border-bottom: 1px solid #0f3460;
+    background: #1c1c24;
+    border-bottom: 1px solid #2a2a3a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 0;
     z-index: 50;
@@ -264,15 +265,16 @@
 
   .back-btn {
     padding: 0.5rem 1rem;
-    background: #0f3460;
-    border-radius: 6px;
-    color: #ccd6f6;
+    background: #2a2a3a;
+    border-radius: 8px;
+    color: #cbd5e1;
     font-size: 0.9rem;
     white-space: nowrap;
+    transition: background 0.15s;
   }
 
   .back-btn:hover {
-    background: #1a4980;
+    background: #363648;
   }
 
   .header h1 {
@@ -309,12 +311,12 @@
 
   .info-group h2 {
     font-size: 0.85rem;
-    color: #8892b0;
+    color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #0f3460;
+    border-bottom: 1px solid #2a2a3a;
   }
 
   .info-grid {
@@ -331,7 +333,7 @@
 
   .label {
     font-size: 0.75rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .value {
@@ -349,13 +351,13 @@
 
   .tag {
     padding: 0.375rem 0.75rem;
-    background: #0f3460;
-    border-radius: 4px;
+    background: #2a2a3a;
+    border-radius: 8px;
     font-size: 0.85rem;
   }
 
   .tag.group {
-    background: #1a4980;
+    background: #363648;
   }
 
   .icons-list {
@@ -374,7 +376,7 @@
   /* Seasons Section */
   .seasons-section {
     padding: 1rem;
-    border-top: 1px solid #0f3460;
+    border-top: 1px solid #2a2a3a;
     margin-top: 1rem;
   }
 
@@ -392,18 +394,18 @@
 
   .season-tab {
     padding: 0.5rem 1rem;
-    background: #0f3460;
-    border-radius: 6px;
+    background: #2a2a3a;
+    border-radius: 8px;
     font-size: 0.85rem;
     transition: background 0.15s;
   }
 
   .season-tab:hover {
-    background: #1a4980;
+    background: #363648;
   }
 
   .season-tab.active {
-    background: #e94560;
+    background: #3b82f6;
   }
 
   .season-tab .year {
@@ -426,18 +428,18 @@
   .episodes-table td {
     padding: 0.5rem;
     text-align: left;
-    border-bottom: 1px solid #0f3460;
+    border-bottom: 1px solid #2a2a3a;
   }
 
   .episodes-table th {
     font-weight: 600;
-    color: #8892b0;
+    color: #94a3b8;
     font-size: 0.75rem;
     text-transform: uppercase;
   }
 
   .episodes-table tr.viewed {
-    background: rgba(233, 69, 96, 0.1);
+    background: rgba(59, 130, 246, 0.1);
   }
 
   .col-ep {

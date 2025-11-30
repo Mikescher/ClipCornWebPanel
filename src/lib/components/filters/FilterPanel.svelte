@@ -218,7 +218,7 @@
     left: 0;
     right: 0;
     max-height: 75vh;
-    background: #16213e;
+    background: #1c1c24;
     border-radius: 1rem 1rem 0 0;
     transform: translateY(100%);
     transition: transform 0.3s ease;
@@ -235,7 +235,7 @@
     display: flex;
     align-items: center;
     padding: 1rem;
-    border-bottom: 1px solid #0f3460;
+    border-bottom: 1px solid #2a2a3a;
     flex-shrink: 0;
   }
 
@@ -247,17 +247,22 @@
 
   .clear-btn {
     padding: 0.375rem 0.75rem;
-    background: #e94560;
+    background: #3b82f6;
     color: white;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 0.8rem;
     margin-right: 0.5rem;
+    transition: background 0.15s;
+  }
+
+  .clear-btn:hover {
+    background: #60a5fa;
   }
 
   .close-btn {
     font-size: 1.5rem;
     padding: 0 0.5rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .panel-content {
@@ -270,7 +275,7 @@
 
   .filter-group h3 {
     font-size: 0.8rem;
-    color: #8892b0;
+    color: #94a3b8;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -284,19 +289,19 @@
 
   .options label {
     padding: 0.375rem 0.75rem;
-    background: #0f3460;
-    border-radius: 4px;
+    background: #2a2a3a;
+    border-radius: 8px;
     font-size: 0.85rem;
     cursor: pointer;
     transition: background 0.15s;
   }
 
   .options label:hover {
-    background: #1a4980;
+    background: #363648;
   }
 
   .options label.active {
-    background: #e94560;
+    background: #3b82f6;
   }
 
   .options input {
@@ -306,15 +311,15 @@
   select {
     width: 100%;
     padding: 0.5rem;
-    background: #0f3460;
-    border: 1px solid #1a4980;
-    border-radius: 4px;
-    color: #eee;
+    background: #2a2a3a;
+    border: 1px solid #363648;
+    border-radius: 8px;
+    color: #f1f5f9;
     font-size: 0.9rem;
   }
 
   select:focus {
-    outline: 2px solid #e94560;
+    outline: 2px solid #3b82f6;
     outline-offset: -2px;
   }
 
@@ -334,7 +339,7 @@
       max-height: none;
       border-radius: 0;
       transform: none;
-      border-right: 1px solid #0f3460;
+      border-right: 1px solid #2a2a3a;
     }
   }
 </style>

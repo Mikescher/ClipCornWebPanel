@@ -221,8 +221,9 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: #16213e;
-    border-bottom: 1px solid #0f3460;
+    background: #1c1c24;
+    border-bottom: 1px solid #2a2a3a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 0;
     z-index: 50;
@@ -230,15 +231,16 @@
 
   .back-btn {
     padding: 0.5rem 1rem;
-    background: #0f3460;
-    border-radius: 6px;
-    color: #ccd6f6;
+    background: #2a2a3a;
+    border-radius: 8px;
+    color: #cbd5e1;
     font-size: 0.9rem;
     white-space: nowrap;
+    transition: background 0.15s;
   }
 
   .back-btn:hover {
-    background: #1a4980;
+    background: #363648;
   }
 
   .header h1 {
@@ -275,12 +277,12 @@
 
   .info-group h2 {
     font-size: 0.85rem;
-    color: #8892b0;
+    color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #0f3460;
+    border-bottom: 1px solid #2a2a3a;
   }
 
   .info-grid {
@@ -297,7 +299,7 @@
 
   .label {
     font-size: 0.75rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .value {
@@ -315,17 +317,17 @@
 
   .tag {
     padding: 0.375rem 0.75rem;
-    background: #0f3460;
-    border-radius: 4px;
+    background: #2a2a3a;
+    border-radius: 8px;
     font-size: 0.85rem;
   }
 
   .tag.group {
-    background: #1a4980;
+    background: #363648;
   }
 
   .tag.version {
-    background: #e94560;
+    background: #3b82f6;
   }
 
   .icons-list {
@@ -349,7 +351,7 @@
   .history-list {
     list-style: none;
     font-size: 0.85rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .history-list li {
@@ -357,7 +359,7 @@
   }
 
   .not-viewed {
-    color: #8892b0;
+    color: #94a3b8;
     font-size: 0.9rem;
   }
 

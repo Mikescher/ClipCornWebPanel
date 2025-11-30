@@ -12,7 +12,7 @@
 <style>
   .app {
     min-height: 100vh;
-    background: #1a1a2e;
-    color: #eee;
+    background: #121218;
+    color: #f1f5f9;
   }
 </style>

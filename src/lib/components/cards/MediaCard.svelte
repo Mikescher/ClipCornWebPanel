@@ -98,14 +98,17 @@
     display: grid;
     grid-template-columns: 60px 1fr auto;
     gap: 0.75rem;
-    padding: 0.5rem;
-    background: #16213e;
-    border-radius: 6px;
-    transition: background 0.15s;
+    padding: 0.75rem;
+    background: #1c1c24;
+    border: 1px solid #2a2a3a;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: background 0.15s, box-shadow 0.15s;
   }
 
   .card:hover {
-    background: #1f2b4d;
+    background: #252530;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .content {
@@ -131,7 +134,7 @@
 
   .groups {
     font-size: 0.75rem;
-    color: #8892b0;
+    color: #94a3b8;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -141,7 +144,7 @@
     display: flex;
     gap: 0.5rem;
     font-size: 0.75rem;
-    color: #8892b0;
+    color: #94a3b8;
     flex-wrap: wrap;
   }
 
@@ -154,9 +157,9 @@
   .genre {
     font-size: 0.65rem;
     padding: 0.125rem 0.375rem;
-    background: #0f3460;
-    border-radius: 3px;
-    color: #ccd6f6;
+    background: #2a2a3a;
+    border-radius: 4px;
+    color: #cbd5e1;
   }
 
   .icons {
@@ -174,7 +177,7 @@
 
   .more {
     font-size: 0.65rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .viewed-row {

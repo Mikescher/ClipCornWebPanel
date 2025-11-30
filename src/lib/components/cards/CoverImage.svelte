@@ -17,8 +17,8 @@
     width: 60px;
     aspect-ratio: 2/3;
     flex-shrink: 0;
-    background: #333;
-    border-radius: 3px;
+    background: #2a2a3a;
+    border-radius: 8px;
     overflow: hidden;
   }
 

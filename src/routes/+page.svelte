@@ -92,7 +92,7 @@
     justify-content: center;
     margin-bottom: 1rem;
     font-size: 0.85rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .card-list {
@@ -104,7 +104,7 @@
   .empty {
     text-align: center;
     padding: 3rem 1rem;
-    color: #8892b0;
+    color: #94a3b8;
   }
 
   .empty p:first-child {
@@ -123,14 +123,14 @@
 
   .pagination button {
     padding: 0.5rem 1rem;
-    background: #0f3460;
-    border-radius: 6px;
-    color: #ccd6f6;
+    background: #2a2a3a;
+    border-radius: 8px;
+    color: #cbd5e1;
     transition: background 0.15s;
   }
 
   .pagination button:hover:not(:disabled) {
-    background: #1a4980;
+    background: #363648;
   }
 
   .pagination button:disabled {
@@ -139,7 +139,7 @@
   }
 
   .page-info {
-    color: #8892b0;
+    color: #94a3b8;
     font-size: 0.9rem;
   }
 

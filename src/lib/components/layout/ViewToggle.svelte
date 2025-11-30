@@ -25,10 +25,10 @@
     left: 1rem;
     width: 48px;
     height: 48px;
-    background: #16213e;
-    border: 2px solid #0f3460;
+    background: #1c1c24;
+    border: 2px solid #2a2a3a;
     border-radius: 50%;
-    color: #8892b0;
+    color: #94a3b8;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,13 +37,13 @@
   }
 
   .view-toggle:hover {
-    background: #1a4980;
-    color: #eee;
+    background: #363648;
+    color: #f1f5f9;
   }
 
   .view-toggle.active {
-    background: #e94560;
-    border-color: #e94560;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: white;
   }
 

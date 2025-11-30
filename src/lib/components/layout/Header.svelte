@@ -32,8 +32,9 @@
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    background: #16213e;
-    border-bottom: 1px solid #0f3460;
+    background: #1c1c24;
+    border-bottom: 1px solid #2a2a3a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 0;
     z-index: 50;
@@ -54,20 +55,20 @@
   .logo-text {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #e94560;
+    color: #3b82f6;
   }
 
   .filter-btn {
     position: relative;
     padding: 0.5rem;
-    background: #0f3460;
-    border-radius: 6px;
-    color: #ccd6f6;
+    background: #2a2a3a;
+    border-radius: 8px;
+    color: #cbd5e1;
     flex-shrink: 0;
   }
 
   .filter-btn:hover {
-    background: #1a4980;
+    background: #363648;
   }
 
   .badge {
@@ -77,7 +78,7 @@
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
-    background: #e94560;
+    background: #3b82f6;
     border-radius: 9px;
     font-size: 0.7rem;
     font-weight: 600;
