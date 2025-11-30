@@ -15,7 +15,7 @@
   .cover-container {
     position: relative;
     width: 60px;
-    aspect-ratio: 2/3;
+    aspect-ratio: 182/254;
     flex-shrink: 0;
     background: #2a2a3a;
     border-radius: 8px;
@@ -31,8 +31,9 @@
   .series-overlay {
     position: absolute;
     top: 0;
-    right: 0;
-    width: 24px;
-    height: 24px;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
   }
 </style>

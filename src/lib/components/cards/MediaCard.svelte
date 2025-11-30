@@ -9,8 +9,6 @@
   import FskIcon from '../icons/FskIcon.svelte';
   import ScoreIcon from '../icons/ScoreIcon.svelte';
   import StarsIcon from '../icons/StarsIcon.svelte';
-  import TagIcon from '../icons/TagIcon.svelte';
-  import ViewedIcon from '../icons/ViewedIcon.svelte';
 
   let { item }: { item: MediaItem } = $props();
 
@@ -80,15 +78,7 @@
       {#if $showViewedData && item.score !== 6}
         <ScoreIcon score={item.score} />
       {/if}
-      {#each item.tags.slice(0, 2) as tag}
-        <TagIcon {tag} />
-      {/each}
     </div>
-    {#if $showViewedData && item.viewedHistory !== undefined}
-      <div class="icons-row viewed-row">
-        <ViewedIcon viewedHistory={item.viewedHistory} />
-      </div>
-    {/if}
     <div class="stars-bottom">
       <StarsIcon num={item.onlineScoreNum} denom={item.onlineScoreDenom} />
     </div>
@@ -180,10 +170,6 @@
   .more {
     font-size: 0.65rem;
     color: #94a3b8;
-  }
-
-  .viewed-row {
-    margin-top: auto;
   }
 
   .stars-bottom {

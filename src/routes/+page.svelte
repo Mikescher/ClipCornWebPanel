@@ -5,7 +5,6 @@
   import type { PageData } from './$types';
   import type { MediaItem } from '$lib/server/queries';
   import Header from '$lib/components/layout/Header.svelte';
-  import ViewToggle from '$lib/components/layout/ViewToggle.svelte';
   import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
   import MediaCard from '$lib/components/cards/MediaCard.svelte';
 
@@ -112,6 +111,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>ClipCorn</title>
+</svelte:head>
+
 <Header />
 
 <FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} />
@@ -134,8 +137,6 @@
     <div class="loading">Loading...</div>
   {/if}
 </main>
-
-<ViewToggle />
 
 <style>
   .main {
