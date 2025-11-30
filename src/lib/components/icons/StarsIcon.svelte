@@ -12,12 +12,8 @@
 
 <style>
   .icon {
-    width: 16px;
+    width: 80px;
     height: 16px;
-    min-width: 16px;
-    min-height: 16px;
-    max-width: 16px;
-    max-height: 16px;
     flex-shrink: 0;
     display: block;
   }
