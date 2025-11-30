@@ -4,7 +4,7 @@
   let { tag }: { tag: number } = $props();
 
   const title = tag >= 0 && tag < TAGS.length ? TAGS[tag] : 'Unknown';
-  const src = `/icons/tags/tag_${tag}_on.png`;
+  const src = `/icons/tags/tag_${tag}_on_16x16.png`;
 </script>
 
 <img {src} alt={title} {title} class="icon" />

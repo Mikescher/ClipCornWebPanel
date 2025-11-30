@@ -8,13 +8,13 @@
     const count = history.length;
 
     if (partial) {
-      return { src: '/icons/viewed/viewed_partial.png', title: 'Partially viewed' };
+      return { src: '/icons/viewed/counter_dot.png', title: 'Partially viewed' };
     } else if (!viewed) {
-      return { src: '/icons/viewed/viewed_no.png', title: 'Not viewed' };
+      return { src: '/icons/viewed/counter_00.png', title: 'Not viewed' };
     } else if (count <= 24) {
-      return { src: `/icons/viewed/counter_${count}.png`, title: `Viewed ${count} time${count !== 1 ? 's' : ''}` };
+      return { src: `/icons/viewed/counter_${String(count).padStart(2, '0')}.png`, title: `Viewed ${count} time${count !== 1 ? 's' : ''}` };
     } else {
-      return { src: '/icons/viewed/counter_24plus.png', title: `Viewed ${count} times` };
+      return { src: '/icons/viewed/counter_24.png', title: `Viewed ${count} times` };
     }
   });
 </script>

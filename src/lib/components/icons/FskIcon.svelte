@@ -4,7 +4,7 @@
   let { fsk }: { fsk: number } = $props();
 
   const title = fsk >= 0 && fsk < FSK_RATINGS.length ? FSK_RATINGS[fsk] : 'Unknown';
-  const src = `/icons/fsk/fsk_${fsk}.png`;
+  const src = `/icons/fsk/fsk_${fsk}_16x16.png`;
 </script>
 
 <img {src} alt={title} {title} class="icon" />

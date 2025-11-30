@@ -75,7 +75,6 @@
         <FormatIcon format={item.format} />
       {/if}
       <FskIcon fsk={item.fsk} />
-      <StarsIcon num={item.onlineScoreNum} denom={item.onlineScoreDenom} />
     </div>
     <div class="icons-row">
       {#if $showViewedData && item.score !== 6}
@@ -90,6 +89,9 @@
         <ViewedIcon viewedHistory={item.viewedHistory} />
       </div>
     {/if}
+    <div class="stars-bottom">
+      <StarsIcon num={item.onlineScoreNum} denom={item.onlineScoreDenom} />
+    </div>
   </div>
 </a>
 
@@ -181,6 +183,10 @@
   }
 
   .viewed-row {
+    margin-top: auto;
+  }
+
+  .stars-bottom {
     margin-top: auto;
   }
 
