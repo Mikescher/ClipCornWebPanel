@@ -1,11 +1,12 @@
 DOCKER_REPO="registry.blackforestbytes.com"
-DOCKER_NAME=bolzai/frontend
+DOCKER_NAME=mikescher/jclipcorn-webpanel
 
 NAMESPACE=$(shell git rev-parse --abbrev-ref HEAD)
 
 HASH=$(shell git rev-parse HEAD)
 
 run:
+	export DATABASE_PATH="/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" && \
 	. ${HOME}/.nvm/nvm.sh && nvm use && npm i && npm run dev
 
 setup:
