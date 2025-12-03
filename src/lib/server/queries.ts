@@ -121,6 +121,7 @@ export interface MediaItem {
   tags: number[];
   year: number;
   addDate: string;
+  onlineRef: string;
   // Movie-specific
   zyklus?: string;
   zyklusNumber?: number;
@@ -546,6 +547,7 @@ function movieRowToMediaItem(row: MovieRow): MediaItem {
     tags: parseTagsFromJson(row.TAGS),
     year: row.MOVIEYEAR,
     addDate: row.ADDDATE,
+    onlineRef: row.ONLINEREF || '',
     zyklus: row.ZYKLUS || undefined,
     zyklusNumber: row.ZYKLUSNUMBER,
     format: row.FORMAT,
@@ -574,6 +576,7 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): Medi
     tags: parseTagsFromJson(row.TAGS),
     year: aggregate ? parseInt(aggregate.yearRange.split('-')[0]) || 0 : 0,
     addDate: aggregate?.lastAddDate || '',
+    onlineRef: row.ONLINEREF || '',
     episodeCount: aggregate?.episodeCount,
     seasonCount: aggregate?.seasonCount,
     totalLength: aggregate?.totalLength,

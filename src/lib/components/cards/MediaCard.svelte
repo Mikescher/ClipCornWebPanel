@@ -2,6 +2,7 @@
   import type { MediaItem } from '$lib/server/queries';
   import { GENRES } from '$lib/constants';
   import { toRoman, formatSize, formatLengthShort } from '$lib/utils/format';
+  import { getFirstRef } from '$lib/utils/onlineref';
   import { showViewedData } from '$lib/stores/ui';
   import CoverImage from './CoverImage.svelte';
   import LanguageIcon from '../icons/LanguageIcon.svelte';
@@ -9,8 +10,13 @@
   import FskIcon from '../icons/FskIcon.svelte';
   import ScoreIcon from '../icons/ScoreIcon.svelte';
   import StarsIcon from '../icons/StarsIcon.svelte';
+  import OnlineRefIcon from '../icons/OnlineRefIcon.svelte';
 
   let { item }: { item: MediaItem } = $props();
+
+  // Get first TMDB/IMDB refs for external links
+  const tmdbRef = $derived(getFirstRef(item.onlineRef, 'tmdb'));
+  const imdbRef = $derived(getFirstRef(item.onlineRef, 'imdb'));
 
   const href = $derived(item.type === 'movie' ? `/movie/${item.id}` : `/series/${item.id}`);
 
@@ -57,6 +63,21 @@
         <span class="genre">{genre}</span>
       {/each}
     </div>
+
+    {#if tmdbRef?.url || imdbRef?.url}
+      <div class="external-links">
+        {#if tmdbRef?.url}
+          <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(tmdbRef.url!, '_blank'); }}>
+            <OnlineRefIcon identifier="tmdb" size={20} />
+          </button>
+        {/if}
+        {#if imdbRef?.url}
+          <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(imdbRef.url!, '_blank'); }}>
+            <OnlineRefIcon identifier="imdb" size={20} />
+          </button>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <div class="icons">
@@ -151,6 +172,32 @@
     padding: 0.125rem 0.375rem;
     background: #2a2a3a;
     border-radius: 4px;
+    color: #cbd5e1;
+  }
+
+  .external-links {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.25rem;
+  }
+
+  .ext-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #2a2a3a;
+    border: none;
+    border-radius: 8px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .ext-btn:hover {
+    background: #363648;
     color: #cbd5e1;
   }
 

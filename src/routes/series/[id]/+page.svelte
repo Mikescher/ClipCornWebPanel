@@ -2,12 +2,14 @@
   import type { PageData } from './$types';
   import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, TAGS } from '$lib/constants';
   import { formatSize, formatLength, formatLengthShort } from '$lib/utils/format';
+  import { parseOnlineRefs, ONLINE_REF_NAMES } from '$lib/utils/onlineref';
   import CoverImage from '$lib/components/cards/CoverImage.svelte';
   import LanguageIcon from '$lib/components/icons/LanguageIcon.svelte';
   import FormatIcon from '$lib/components/icons/FormatIcon.svelte';
   import FskIcon from '$lib/components/icons/FskIcon.svelte';
   import StarsIcon from '$lib/components/icons/StarsIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
+  import OnlineRefIcon from '$lib/components/icons/OnlineRefIcon.svelte';
 
   let { data }: { data: PageData } = $props();
   const series = data.series;
@@ -17,6 +19,9 @@
   const selectedSeason = $derived(seasons[selectedSeasonIndex]);
 
   const genreNames = series.genres.map((g) => (g < GENRES.length ? GENRES[g] : `Genre ${g}`));
+
+  // Parse online references
+  const onlineRefs = parseOnlineRefs(series.onlineRef).filter((r) => r.url);
 
   // Get all unique languages from episodes
   function getLanguagesFromBitmask(bitmask: number): number[] {
@@ -162,6 +167,24 @@
               <span class="value">{series.animeStudio.join(', ')}</span>
             </div>
           {/if}
+        </div>
+      {/if}
+
+      <!-- External Links -->
+      {#if onlineRefs.length > 0}
+        <div class="info-group">
+          <h2>External Links</h2>
+          <div class="external-links">
+            {#each onlineRefs as ref}
+              <a href={ref.url} class="ext-link" target="_blank" rel="noopener">
+                <OnlineRefIcon identifier={ref.identifier} size={20} />
+                <span class="ext-name">{ONLINE_REF_NAMES[ref.identifier] || ref.identifier}</span>
+                {#if ref.description}
+                  <span class="ext-desc">{ref.description}</span>
+                {/if}
+              </a>
+            {/each}
+          </div>
         </div>
       {/if}
     </div>
@@ -347,6 +370,37 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.85rem;
+  }
+
+  .external-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .ext-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #2a2a3a;
+    border-radius: 8px;
+    color: #cbd5e1;
+    transition: background 0.15s;
+  }
+
+  .ext-link:hover {
+    background: #363648;
+  }
+
+  .ext-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .ext-desc {
+    font-size: 0.75rem;
+    color: #94a3b8;
   }
 
   /* Seasons Section */

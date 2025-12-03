@@ -6,6 +6,7 @@
   import type { MediaItem } from '$lib/server/queries';
   import Header from '$lib/components/layout/Header.svelte';
   import FilterPanel from '$lib/components/filters/FilterPanel.svelte';
+  import ActiveFilters from '$lib/components/filters/ActiveFilters.svelte';
   import MediaCard from '$lib/components/cards/MediaCard.svelte';
 
   let { data }: { data: PageData } = $props();
@@ -118,6 +119,8 @@
 <Header />
 
 <FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} />
+
+<ActiveFilters />
 
 <main class="main">
   <div class="card-list">
