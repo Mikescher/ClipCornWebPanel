@@ -14,9 +14,11 @@
 
   let { item }: { item: MediaItem } = $props();
 
-  // Get first TMDB/IMDB refs for external links
+  // Get first refs for external links
   const tmdbRef = $derived(getFirstRef(item.onlineRef, 'tmdb'));
   const imdbRef = $derived(getFirstRef(item.onlineRef, 'imdb'));
+  const malRef = $derived(getFirstRef(item.onlineRef, 'myal'));
+  const anidbRef = $derived(getFirstRef(item.onlineRef, 'andb'));
 
   const href = $derived(item.type === 'movie' ? `/movie/${item.id}` : `/series/${item.id}`);
 
@@ -64,7 +66,7 @@
       {/each}
     </div>
 
-    {#if tmdbRef?.url || imdbRef?.url}
+    {#if tmdbRef?.url || imdbRef?.url || malRef?.url || anidbRef?.url}
       <div class="external-links">
         {#if tmdbRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(tmdbRef.url!, '_blank'); }}>
@@ -74,6 +76,16 @@
         {#if imdbRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(imdbRef.url!, '_blank'); }}>
             <OnlineRefIcon identifier="imdb" size={20} />
+          </button>
+        {/if}
+        {#if malRef?.url}
+          <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(malRef.url!, '_blank'); }}>
+            <OnlineRefIcon identifier="myal" size={20} />
+          </button>
+        {/if}
+        {#if anidbRef?.url}
+          <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(anidbRef.url!, '_blank'); }}>
+            <OnlineRefIcon identifier="andb" size={20} />
           </button>
         {/if}
       </div>
