@@ -179,7 +179,7 @@
   /* Mobile adjustments */
   @media (max-width: 480px) {
     .card {
-      grid-template-columns: 50px 1fr auto;
+      grid-template-columns: 60px 1fr auto;
       gap: 0.5rem;
     }
 

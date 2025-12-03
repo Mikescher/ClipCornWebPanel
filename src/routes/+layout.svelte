@@ -1,8 +1,16 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { onMount } from 'svelte';
   import '../app.css';
 
   let { children }: { children: Snippet } = $props();
+
+  onMount(() => {
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+      loader.remove();
+    }
+  });
 </script>
 
 <div class="app">

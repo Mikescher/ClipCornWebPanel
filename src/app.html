@@ -6,9 +6,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#333333" />
     <title>ClipCorn</title>
+    <style>
+      /* Initial page loader - shown until SvelteKit hydrates */
+      .initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #121218;
+        z-index: 9999;
+      }
+      .initial-loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #2a2a35;
+        border-top-color: #f59e0b;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .initial-loader-text {
+        margin-top: 1rem;
+        color: #94a3b8;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
+    <div id="initial-loader" class="initial-loader">
+      <div class="initial-loader-spinner"></div>
+      <div class="initial-loader-text">Loading...</div>
+    </div>
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
