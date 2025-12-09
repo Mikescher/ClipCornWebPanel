@@ -41,7 +41,7 @@
 
 <div class="page">
   <header class="header">
-    <a href="/" class="back-btn">← Back</a>
+    <button type="button" class="back-btn" onclick={() => history.back()}>← Back</button>
     <h1>{series.name}</h1>
   </header>
 
@@ -265,10 +265,12 @@
   .back-btn {
     padding: 0.5rem 1rem;
     background: #2a2a3a;
+    border: none;
     border-radius: 8px;
     color: #cbd5e1;
     font-size: 0.9rem;
     white-space: nowrap;
+    cursor: pointer;
     transition: background 0.15s;
   }
 

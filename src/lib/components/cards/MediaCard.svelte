@@ -25,7 +25,7 @@
   // Build display title
   const displayTitle = $derived(
     item.zyklus && item.zyklusNumber && item.zyklusNumber > 0
-      ? `${item.zyklus}${toRoman(item.zyklusNumber)} - ${item.name}`
+      ? `${item.zyklus} ${toRoman(item.zyklusNumber)} - ${item.name}`
       : item.name
   );
 

@@ -207,6 +207,11 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
     params.push(`%${filters.version}%`);
   }
 
+  if (filters.tags !== undefined) {
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    params.push(filters.tags);
+  }
+
   // Get total count
   const countQuery = `SELECT COUNT(*) as count FROM MOVIES ${whereClause}`;
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
@@ -242,9 +247,27 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
     params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
   }
 
+  if (filters.language !== undefined) {
+    whereClause += ` AND EXISTS (
+      SELECT 1 FROM SEASONS se
+      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
+      WHERE se.SERIESID = SERIES.LOCALID AND (ep.LANGUAGE & ?) != 0
+    )`;
+    params.push(1 << filters.language);
+  }
+
   if (filters.fsk !== undefined) {
     whereClause += ` AND FSK = ?`;
     params.push(filters.fsk);
+  }
+
+  if (filters.format !== undefined) {
+    whereClause += ` AND EXISTS (
+      SELECT 1 FROM SEASONS se
+      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
+      WHERE se.SERIESID = SERIES.LOCALID AND ep.FORMAT = ?
+    )`;
+    params.push(filters.format);
   }
 
   if (filters.score !== undefined) {
@@ -276,6 +299,11 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   if (filters.version) {
     whereClause += ` AND SPECIALVERSION LIKE ?`;
     params.push(`%${filters.version}%`);
+  }
+
+  if (filters.tags !== undefined) {
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    params.push(filters.tags);
   }
 
   // Get total count
@@ -396,6 +424,11 @@ function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
     params.push(`%${filters.version}%`);
   }
 
+  if (filters.tags !== undefined) {
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    params.push(filters.tags);
+  }
+
   const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC`;
   const rows = db.prepare(query).all(...params) as MovieRow[];
 
@@ -418,9 +451,27 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
     params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
   }
 
+  if (filters.language !== undefined) {
+    whereClause += ` AND EXISTS (
+      SELECT 1 FROM SEASONS se
+      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
+      WHERE se.SERIESID = SERIES.LOCALID AND (ep.LANGUAGE & ?) != 0
+    )`;
+    params.push(1 << filters.language);
+  }
+
   if (filters.fsk !== undefined) {
     whereClause += ` AND FSK = ?`;
     params.push(filters.fsk);
+  }
+
+  if (filters.format !== undefined) {
+    whereClause += ` AND EXISTS (
+      SELECT 1 FROM SEASONS se
+      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
+      WHERE se.SERIESID = SERIES.LOCALID AND ep.FORMAT = ?
+    )`;
+    params.push(filters.format);
   }
 
   if (filters.score !== undefined) {
@@ -452,6 +503,11 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
   if (filters.version) {
     whereClause += ` AND SPECIALVERSION LIKE ?`;
     params.push(`%${filters.version}%`);
+  }
+
+  if (filters.tags !== undefined) {
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    params.push(filters.tags);
   }
 
   const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC`;

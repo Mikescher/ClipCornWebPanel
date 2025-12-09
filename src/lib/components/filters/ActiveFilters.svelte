@@ -57,23 +57,21 @@
   );
 </script>
 
-{#if activeFilters.length > 0}
-  <div class="active-filters">
-    <div class="taglets">
-      {#each activeFilters as filter (filter.key)}
-        <span class="taglet">
-          <span class="taglet-label">{filter.label}</span>
-          <button
-            class="taglet-remove"
-            onclick={() => removeFilter(filter.key)}
-            aria-label="Remove {filter.label} filter"
-          >×</button>
-        </span>
-      {/each}
-    </div>
-    <button class="clear-all" onclick={clearAllFilters}>Clear all</button>
+<div class="active-filters" class:hidden={activeFilters.length === 0}>
+  <div class="taglets">
+    {#each activeFilters as filter (filter.key)}
+      <span class="taglet">
+        <span class="taglet-label">{filter.label}</span>
+        <button
+          class="taglet-remove"
+          onclick={() => removeFilter(filter.key)}
+          aria-label="Remove {filter.label} filter"
+        >×</button>
+      </span>
+    {/each}
   </div>
-{/if}
+  <button class="clear-all" onclick={clearAllFilters}>Clear all</button>
+</div>
 
 <style>
   .active-filters {
@@ -83,6 +81,10 @@
     padding: 0.75rem 1rem;
     background: #1c1c24;
     border-bottom: 1px solid #2a2a3a;
+  }
+
+  .active-filters.hidden {
+    visibility: hidden;
   }
 
   .taglets {

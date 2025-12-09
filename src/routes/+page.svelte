@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page, navigating } from '$app/stores';
   import { filters, filtersToParams, paramsToFilters } from '$lib/stores/filters';
   import type { PageData } from './$types';
   import type { MediaItem } from '$lib/server/queries';
@@ -106,7 +106,7 @@
     if (currentSearch === newSearch) return;
     isSyncingToUrl = true;
     const newUrl = newSearch ? `?${newSearch}` : '/';
-    goto(newUrl, { replaceState: true, noScroll: true }).finally(() => {
+    goto(newUrl, { replaceState: true, noScroll: true, keepFocus: true }).finally(() => {
       isSyncingToUrl = false;
     });
   });
@@ -123,21 +123,27 @@
 <ActiveFilters />
 
 <main class="main">
-  <div class="card-list">
-    {#each allItems as item (item.id + '-' + item.type)}
-      <MediaCard {item} />
-    {/each}
-  </div>
-
-  {#if allItems.length === 0 && !isLoading}
-    <div class="empty">
-      <p>No results found.</p>
-      <p>Try adjusting your filters.</p>
+  {#if $navigating}
+    <div class="loading-overlay">
+      <div class="spinner"></div>
     </div>
-  {/if}
+  {:else}
+    <div class="card-list">
+      {#each allItems as item (item.id + '-' + item.type)}
+        <MediaCard {item} />
+      {/each}
+    </div>
 
-  {#if isLoading}
-    <div class="loading">Loading...</div>
+    {#if allItems.length === 0 && !isLoading}
+      <div class="empty">
+        <p>No results found.</p>
+        <p>Try adjusting your filters.</p>
+      </div>
+    {/if}
+
+    {#if isLoading}
+      <div class="loading">Loading more...</div>
+    {/if}
   {/if}
 </main>
 
@@ -145,6 +151,28 @@
   .main {
     padding: 1rem;
     padding-bottom: 5rem;
+  }
+
+  .loading-overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #334155;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .card-list {

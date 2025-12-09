@@ -22,9 +22,7 @@
 
 <div class="search-container">
   <input type="search" placeholder="Search movies & series..." value={searchValue} oninput={handleInput} class="search-input" />
-  {#if searchValue}
-    <button class="clear-btn" onclick={clearSearch}>×</button>
-  {/if}
+  <button class="clear-btn" class:hidden={!searchValue} onclick={clearSearch}>×</button>
 </div>
 
 <style>
@@ -65,5 +63,9 @@
 
   .clear-btn:hover {
     color: #f1f5f9;
+  }
+
+  .clear-btn.hidden {
+    visibility: hidden;
   }
 </style>

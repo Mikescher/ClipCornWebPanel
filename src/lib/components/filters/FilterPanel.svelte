@@ -35,9 +35,7 @@
 <div class="panel" class:open={$filterPanelOpen}>
   <div class="panel-header">
     <h2>Filters</h2>
-    {#if $activeFiltersCount > 0}
-      <button class="clear-btn" onclick={clearFilters}>Clear ({$activeFiltersCount})</button>
-    {/if}
+    <button class="clear-btn" class:hidden={!($activeFiltersCount > 0)} onclick={clearFilters}>Clear ({$activeFiltersCount})</button>
     <button class="close-btn" onclick={closePanel}>×</button>
   </div>
 
@@ -259,6 +257,10 @@
     background: #60a5fa;
   }
 
+  .clear-btn.hidden {
+    visibility: hidden;
+  }
+  
   .close-btn {
     font-size: 1.5rem;
     padding: 0 0.5rem;
