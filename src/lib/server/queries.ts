@@ -718,7 +718,7 @@ export function getSeasonEpisodes(seasonId: number): EpisodeRow[] {
 
 export function getGroups(): GroupRow[] {
   const db = getDb();
-  return db.prepare('SELECT * FROM GROUPS WHERE VISIBLE = 1 ORDER BY ORDERING ASC').all() as GroupRow[];
+  return db.prepare('SELECT * FROM GROUPS ORDER BY ORDERING ASC').all() as GroupRow[];
 }
 
 export function getDistinctYears(): number[] {
