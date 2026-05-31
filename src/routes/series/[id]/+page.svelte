@@ -23,15 +23,15 @@
   // Parse online references
   const onlineRefs = parseOnlineRefs(series.onlineRef).filter((r) => r.url);
 
-  // Get all unique languages from episodes
-  function getLanguagesFromBitmask(bitmask: number): number[] {
-    const bits: number[] = [];
-    for (let i = 0; i < 32; i++) {
-      if ((bitmask & (1 << i)) !== 0) {
-        bits.push(i);
-      }
+  // Parse the per-episode language list (JSON int array)
+  function getEpisodeLanguages(value: string): number[] {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
     }
-    return bits;
   }
 </script>
 
@@ -219,7 +219,7 @@
             </thead>
             <tbody>
               {#each selectedSeason.episodes as episode}
-                {@const epLanguages = getLanguagesFromBitmask(episode.LANGUAGE)}
+                {@const epLanguages = getEpisodeLanguages(episode.LANGUAGE)}
                 <tr>
                   <td class="col-ep">{episode.EPISODE}</td>
                   <td class="col-name">{episode.NAME}</td>

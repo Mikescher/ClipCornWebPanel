@@ -40,34 +40,34 @@ function getOnlineRefUrl(identifier: string, id: string): string | null {
   return template.replace('{id}', id);
 }
 
-function decodeBase64(str: string): string {
-  try {
-    return atob(str);
-  } catch {
-    return str;
-  }
+interface OnlineRefJson {
+  t?: string;
+  id?: string;
+  d?: string;
 }
 
 export function parseOnlineRefs(onlineref: string): OnlineRef[] {
   if (!onlineref) return [];
 
+  let entries: OnlineRefJson[];
+  try {
+    const parsed = JSON.parse(onlineref);
+    entries = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+
   const refs: OnlineRef[] = [];
-  const entries = onlineref.split(';');
-
   for (const entry of entries) {
-    if (!entry) continue;
+    if (!entry || !entry.t || !entry.id) continue;
 
-    const parts = entry.split(':');
-    if (parts.length < 2) continue;
-
-    const identifier = parts[0];
-    const id = parts[1];
-    const descriptionBase64 = parts.length > 2 ? parts.slice(2).join(':') : undefined;
+    const identifier = entry.t;
+    const id = entry.id;
 
     refs.push({
       identifier,
       id,
-      description: descriptionBase64 ? decodeBase64(descriptionBase64) : undefined,
+      description: entry.d || undefined,
       url: getOnlineRefUrl(identifier, id)
     });
   }

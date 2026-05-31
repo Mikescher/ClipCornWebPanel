@@ -106,14 +106,20 @@ export function formatLengthShort(mins: number): string {
 }
 
 /**
- * Parse viewed history string
- * Format: "UNSPECIFIED,2017-06-17 21:29:00,2022-02-26 15:51:00"
+ * Parse viewed history (JSON array of SQL datetime strings)
+ * Format: ["UNSPECIFIED","2017-06-17 21:29:00","2022-02-26 15:51:00"]
  */
 export function parseViewedHistory(value: string): { viewed: boolean; history: string[] } {
   if (!value || value === '') {
     return { viewed: false, history: [] };
   }
-  const parts = value.split(',');
+  let parts: string[];
+  try {
+    const parsed = JSON.parse(value);
+    parts = Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    parts = [];
+  }
   const history = parts.filter((p) => p !== 'UNSPECIFIED' && p !== '');
   return {
     viewed: history.length > 0,

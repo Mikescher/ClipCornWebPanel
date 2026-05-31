@@ -7,9 +7,9 @@ export interface MovieRow {
   VIEWED_HISTORY: string;
   ZYKLUS: string;
   ZYKLUSNUMBER: number;
-  LANGUAGE: number;
+  LANGUAGE: string;
   SUBTITLES: string;
-  GENRE: number;
+  GENRE: string;
   LENGTH: number;
   ADDDATE: string;
   ONLINESCORE_NUM: number;
@@ -32,7 +32,7 @@ export interface MovieRow {
 export interface SeriesRow {
   LOCALID: number;
   NAME: string;
-  GENRE: number;
+  GENRE: string;
   ONLINESCORE_NUM: number;
   ONLINESCORE_DENOM: number;
   FSK: number;
@@ -68,7 +68,7 @@ export interface EpisodeRow {
   FILESIZE: number;
   PART1: string;
   ADDDATE: string;
-  LANGUAGE: number;
+  LANGUAGE: string;
   SUBTITLES: string;
   SCORE: number;
   SCORECOMMENT: number;
@@ -151,13 +151,13 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
   }
 
   if (filters.group) {
-    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
-    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GROUPS) WHERE value = ?)`;
+    params.push(filters.group);
   }
 
   if (filters.language !== undefined) {
-    whereClause += ` AND (LANGUAGE & ?) != 0`;
-    params.push(1 << filters.language);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(LANGUAGE) WHERE value = ?)`;
+    params.push(filters.language);
   }
 
   if (filters.fsk !== undefined) {
@@ -181,15 +181,8 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
   }
 
   if (filters.genre !== undefined) {
-    // Genre is packed bytes, check if genre appears in any byte position
-    let genreQuery = '(';
-    for (let i = 0; i < 8; i++) {
-      if (i > 0) genreQuery += ' OR ';
-      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
-      params.push(i * 8, filters.genre);
-    }
-    genreQuery += ')';
-    whereClause += ` AND ${genreQuery}`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GENRE) WHERE value = ?)`;
+    params.push(filters.genre);
   }
 
   if (filters.animeseason) {
@@ -243,17 +236,17 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   }
 
   if (filters.group) {
-    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
-    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GROUPS) WHERE value = ?)`;
+    params.push(filters.group);
   }
 
   if (filters.language !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
       JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND (ep.LANGUAGE & ?) != 0
+      WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
     )`;
-    params.push(1 << filters.language);
+    params.push(filters.language);
   }
 
   if (filters.fsk !== undefined) {
@@ -276,14 +269,8 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   }
 
   if (filters.genre !== undefined) {
-    let genreQuery = '(';
-    for (let i = 0; i < 8; i++) {
-      if (i > 0) genreQuery += ' OR ';
-      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
-      params.push(i * 8, filters.genre);
-    }
-    genreQuery += ')';
-    whereClause += ` AND ${genreQuery}`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GENRE) WHERE value = ?)`;
+    params.push(filters.genre);
   }
 
   if (filters.animeseason) {
@@ -369,13 +356,13 @@ function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
   }
 
   if (filters.group) {
-    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
-    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GROUPS) WHERE value = ?)`;
+    params.push(filters.group);
   }
 
   if (filters.language !== undefined) {
-    whereClause += ` AND (LANGUAGE & ?) != 0`;
-    params.push(1 << filters.language);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(LANGUAGE) WHERE value = ?)`;
+    params.push(filters.language);
   }
 
   if (filters.fsk !== undefined) {
@@ -399,14 +386,8 @@ function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
   }
 
   if (filters.genre !== undefined) {
-    let genreQuery = '(';
-    for (let i = 0; i < 8; i++) {
-      if (i > 0) genreQuery += ' OR ';
-      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
-      params.push(i * 8, filters.genre);
-    }
-    genreQuery += ')';
-    whereClause += ` AND ${genreQuery}`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GENRE) WHERE value = ?)`;
+    params.push(filters.genre);
   }
 
   if (filters.animeseason) {
@@ -447,17 +428,17 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
   }
 
   if (filters.group) {
-    whereClause += ` AND (GROUPS = ? OR GROUPS LIKE ? OR GROUPS LIKE ? OR GROUPS LIKE ?)`;
-    params.push(filters.group, `${filters.group};%`, `%;${filters.group}`, `%;${filters.group};%`);
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GROUPS) WHERE value = ?)`;
+    params.push(filters.group);
   }
 
   if (filters.language !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
       JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND (ep.LANGUAGE & ?) != 0
+      WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
     )`;
-    params.push(1 << filters.language);
+    params.push(filters.language);
   }
 
   if (filters.fsk !== undefined) {
@@ -480,14 +461,8 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
   }
 
   if (filters.genre !== undefined) {
-    let genreQuery = '(';
-    for (let i = 0; i < 8; i++) {
-      if (i > 0) genreQuery += ' OR ';
-      genreQuery += `((GENRE >> ?) & 0xFF) = ?`;
-      params.push(i * 8, filters.genre);
-    }
-    genreQuery += ')';
-    whereClause += ` AND ${genreQuery}`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(GENRE) WHERE value = ?)`;
+    params.push(filters.genre);
   }
 
   if (filters.animeseason) {
@@ -557,11 +532,16 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
 
   const result = new Map<number, SeriesAggregate>();
   for (const row of rows) {
-    // Combine all language bitmasks
-    const langStrings = row.languages?.split(',') || [];
-    let combinedLang = 0;
-    for (const l of langStrings) {
-      combinedLang |= parseInt(l) || 0;
+    // Combine all per-episode language arrays (each ep.LANGUAGE is a JSON int array).
+    // GROUP_CONCAT joins them with ',', so wrapping in [] yields a JSON array of arrays.
+    const langSet = new Set<number>();
+    if (row.languages) {
+      try {
+        const nested = JSON.parse(`[${row.languages}]`) as number[][];
+        for (const arr of nested) for (const l of arr) langSet.add(l);
+      } catch {
+        // ignore malformed language aggregate
+      }
     }
 
     result.set(row.SERIESID, {
@@ -570,7 +550,7 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       totalLength: row.totalLength || 0,
       totalFilesize: row.totalFilesize || 0,
       yearRange: row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
-      languages: combinedLang,
+      languages: Array.from(langSet).sort((a, b) => a - b),
       lastAddDate: row.lastAddDate || ''
     });
   }
@@ -583,7 +563,7 @@ interface SeriesAggregate {
   totalLength: number;
   totalFilesize: number;
   yearRange: string;
-  languages: number;
+  languages: number[];
   lastAddDate: string;
 }
 
@@ -593,14 +573,14 @@ function movieRowToMediaItem(row: MovieRow): MediaItem {
     type: 'movie',
     name: row.NAME,
     coverId: row.COVERID,
-    genres: getGenresFromPacked(BigInt(row.GENRE)),
-    groups: row.GROUPS ? row.GROUPS.split(';').filter((g) => g) : [],
-    languages: getBitsFromNumber(row.LANGUAGE),
+    genres: parseIntArrayFromJson(row.GENRE),
+    groups: parseJsonArraySafe(row.GROUPS),
+    languages: parseIntArrayFromJson(row.LANGUAGE),
     score: row.SCORE,
     onlineScoreNum: row.ONLINESCORE_NUM,
     onlineScoreDenom: row.ONLINESCORE_DENOM,
     fsk: row.FSK,
-    tags: parseTagsFromJson(row.TAGS),
+    tags: parseIntArrayFromJson(row.TAGS),
     year: row.MOVIEYEAR,
     addDate: row.ADDDATE,
     onlineRef: row.ONLINEREF || '',
@@ -622,14 +602,14 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): Medi
     type: 'series',
     name: row.NAME,
     coverId: row.COVERID,
-    genres: getGenresFromPacked(BigInt(row.GENRE)),
-    groups: row.GROUPS ? row.GROUPS.split(';').filter((g) => g) : [],
-    languages: aggregate ? getBitsFromNumber(aggregate.languages) : [],
+    genres: parseIntArrayFromJson(row.GENRE),
+    groups: parseJsonArraySafe(row.GROUPS),
+    languages: aggregate ? aggregate.languages : [],
     score: row.SCORE,
     onlineScoreNum: row.ONLINESCORE_NUM,
     onlineScoreDenom: row.ONLINESCORE_DENOM,
     fsk: row.FSK,
-    tags: parseTagsFromJson(row.TAGS),
+    tags: parseIntArrayFromJson(row.TAGS),
     year: aggregate ? parseInt(aggregate.yearRange.split('-')[0]) || 0 : 0,
     addDate: aggregate?.lastAddDate || '',
     onlineRef: row.ONLINEREF || '',
@@ -643,28 +623,7 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): Medi
   };
 }
 
-function getGenresFromPacked(value: bigint): number[] {
-  const genres: number[] = [];
-  let v = value;
-  for (let i = 0; i < 8; i++) {
-    const genre = Number(v & 0xffn);
-    if (genre !== 0) genres.push(genre);
-    v = v >> 8n;
-  }
-  return genres;
-}
-
-function getBitsFromNumber(value: number): number[] {
-  const bits: number[] = [];
-  for (let i = 0; i < 32; i++) {
-    if ((value & (1 << i)) !== 0) {
-      bits.push(i);
-    }
-  }
-  return bits;
-}
-
-function parseTagsFromJson(value: string | null): number[] {
+function parseIntArrayFromJson(value: string | null): number[] {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
