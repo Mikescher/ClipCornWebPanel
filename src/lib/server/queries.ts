@@ -55,6 +55,7 @@ export interface SeasonRow {
   COVERID: number;
   SCORE: number;
   SCORECOMMENT: string;
+  ONLINEREF: string;
 }
 
 export interface EpisodeRow {

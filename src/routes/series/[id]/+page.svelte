@@ -20,8 +20,11 @@
 
   const genreNames = series.genres.map((g) => (g < GENRES.length ? GENRES[g] : `Genre ${g}`));
 
-  // Parse online references
+  // Parse online references (series-level, then per-season)
   const onlineRefs = parseOnlineRefs(series.onlineRef).filter((r) => r.url);
+  const seasonOnlineRefs = seasons
+    .map((s) => ({ name: s.NAME, refs: parseOnlineRefs(s.ONLINEREF).filter((r) => r.url) }))
+    .filter((s) => s.refs.length > 0);
 
   // Parse the per-episode language list (JSON int array)
   function getEpisodeLanguages(value: string): number[] {
@@ -171,20 +174,38 @@
       {/if}
 
       <!-- External Links -->
-      {#if onlineRefs.length > 0}
+      {#if onlineRefs.length > 0 || seasonOnlineRefs.length > 0}
         <div class="info-group">
           <h2>External Links</h2>
-          <div class="external-links">
-            {#each onlineRefs as ref}
-              <a href={ref.url} class="ext-link" target="_blank" rel="noopener">
-                <OnlineRefIcon identifier={ref.identifier} size={20} />
-                <span class="ext-name">{ONLINE_REF_NAMES[ref.identifier] || ref.identifier}</span>
-                {#if ref.description}
-                  <span class="ext-desc">{ref.description}</span>
-                {/if}
-              </a>
-            {/each}
-          </div>
+          {#if onlineRefs.length > 0}
+            <div class="external-links">
+              {#each onlineRefs as ref}
+                <a href={ref.url} class="ext-link" target="_blank" rel="noopener">
+                  <OnlineRefIcon identifier={ref.identifier} size={20} />
+                  <span class="ext-name">{ONLINE_REF_NAMES[ref.identifier] || ref.identifier}</span>
+                  {#if ref.description}
+                    <span class="ext-desc">{ref.description}</span>
+                  {/if}
+                </a>
+              {/each}
+            </div>
+          {/if}
+          {#each seasonOnlineRefs as season}
+            <div class="ext-season-row">
+              <span class="ext-season-label">{season.name}</span>
+              <div class="external-links">
+                {#each season.refs as ref}
+                  <a href={ref.url} class="ext-link" target="_blank" rel="noopener">
+                    <OnlineRefIcon identifier={ref.identifier} size={20} />
+                    <span class="ext-name">{ONLINE_REF_NAMES[ref.identifier] || ref.identifier}</span>
+                    {#if ref.description}
+                      <span class="ext-desc">{ref.description}</span>
+                    {/if}
+                  </a>
+                {/each}
+              </div>
+            </div>
+          {/each}
         </div>
       {/if}
     </div>
@@ -403,6 +424,18 @@
   .ext-desc {
     font-size: 0.75rem;
     color: #94a3b8;
+  }
+
+  .ext-season-row {
+    margin-top: 0.75rem;
+  }
+
+  .ext-season-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 0.4rem;
   }
 
   /* Seasons Section */
