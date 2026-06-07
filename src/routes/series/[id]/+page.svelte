@@ -244,8 +244,13 @@
       <div class="season-tabs">
         {#each seasons as season, i}
           <button class="season-tab" class:active={i === selectedSeasonIndex} onclick={() => (selectedSeasonIndex = i)}>
-            {season.NAME || `Season ${i + 1}`}
-            <span class="year">({season.SEASONYEAR})</span>
+            <span class="season-cover">
+              <CoverImage coverId={season.COVERID} alt={season.NAME || `Season ${i + 1}`} />
+            </span>
+            <span class="season-label">
+              {season.NAME || `Season ${i + 1}`}
+              <span class="year">({season.SEASONYEAR})</span>
+            </span>
           </button>
         {/each}
       </div>
@@ -547,7 +552,12 @@
   }
 
   .season-tab {
-    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 110px;
+    padding: 0.5rem;
     background: #2a2a3a;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -560,6 +570,21 @@
 
   .season-tab.active {
     background: #3b82f6;
+  }
+
+  .season-cover {
+    width: 90px;
+    display: block;
+  }
+
+  .season-cover :global(.cover-container) {
+    width: 100%;
+  }
+
+  .season-label {
+    display: block;
+    text-align: center;
+    line-height: 1.3;
   }
 
   .season-tab .year {
