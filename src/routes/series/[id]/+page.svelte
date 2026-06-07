@@ -10,6 +10,7 @@
   import FormatIcon from '$lib/components/icons/FormatIcon.svelte';
   import FskIcon from '$lib/components/icons/FskIcon.svelte';
   import StarsIcon from '$lib/components/icons/StarsIcon.svelte';
+  import ScoreIcon from '$lib/components/icons/ScoreIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
   import OnlineRefIcon from '$lib/components/icons/OnlineRefIcon.svelte';
 
@@ -271,6 +272,9 @@
                   <th class="col-viewed" aria-label="Viewed"></th>
                 {/if}
                 <th class="col-name">Name</th>
+                {#if data.authenticated}
+                  <th class="col-rating">Rating</th>
+                {/if}
                 <th class="col-length">Length</th>
                 <th class="col-size">Size</th>
                 <th class="col-lang">Lang</th>
@@ -301,6 +305,16 @@
                     </td>
                   {/if}
                   <td class="col-name">{episode.NAME}</td>
+                  {#if data.authenticated}
+                    <td class="col-rating">
+                      {#if episode.SCORE !== 6}
+                        <ScoreIcon score={episode.SCORE} />
+                      {/if}
+                      {#if episode.SCORECOMMENT && episode.SCORECOMMENT.trim()}
+                        <img src="/icons/score/comment.png" alt="Comment" title="Comment" class="comment-icon" />
+                      {/if}
+                    </td>
+                  {/if}
                   <td class="col-length">{formatLengthShort(episode.LENGTH)}</td>
                   <td class="col-size">{formatSize(episode.FILESIZE)}</td>
                   <td class="col-lang">
@@ -619,6 +633,19 @@
   .col-format {
     width: 80px;
     white-space: nowrap;
+  }
+
+  .col-rating {
+    width: 56px;
+    white-space: nowrap;
+  }
+
+  .col-rating .comment-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.25rem;
   }
 
   /* Hide columns on mobile */
