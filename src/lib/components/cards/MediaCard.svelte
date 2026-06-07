@@ -78,22 +78,22 @@
       <div class="external-links">
         {#if tmdbRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(tmdbRef.url!, '_blank'); }}>
-            <OnlineRefIcon identifier="tmdb" size={20} />
+            <OnlineRefIcon identifier="tmdb" size={16} />
           </button>
         {/if}
         {#if imdbRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(imdbRef.url!, '_blank'); }}>
-            <OnlineRefIcon identifier="imdb" size={20} />
+            <OnlineRefIcon identifier="imdb" size={16} />
           </button>
         {/if}
         {#if malRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(malRef.url!, '_blank'); }}>
-            <OnlineRefIcon identifier="myal" size={20} />
+            <OnlineRefIcon identifier="myal" size={16} />
           </button>
         {/if}
         {#if anidbRef?.url}
           <button type="button" class="ext-btn" onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(anidbRef.url!, '_blank'); }}>
-            <OnlineRefIcon identifier="andb" size={20} />
+            <OnlineRefIcon identifier="andb" size={16} />
           </button>
         {/if}
       </div>
@@ -231,19 +231,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    padding: 3px;
     background: #2a2a3a;
-    border: none;
-    border-radius: 8px;
+    border: 1px solid #3a3a4a;
+    border-radius: 5px;
     color: #94a3b8;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, border-color 0.15s;
   }
 
   .ext-btn:hover {
     background: #363648;
-    color: #cbd5e1;
+    border-color: #4a4a5e;
   }
 
   .icons {
