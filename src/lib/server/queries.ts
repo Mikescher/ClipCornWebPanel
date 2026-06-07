@@ -465,7 +465,7 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
 
   // Get aggregated data for each series
   const seriesIds = items.map((s) => s.LOCALID);
-  const aggregates = getSeriesAggregates(seriesIds);
+  const aggregates = getSeriesAggregates(seriesIds, authenticated);
 
   return {
     items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated)),
@@ -652,33 +652,37 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
 
   // Get aggregated data for all series
   const seriesIds = rows.map((s) => s.LOCALID);
-  const aggregates = getSeriesAggregates(seriesIds);
+  const aggregates = getSeriesAggregates(seriesIds, authenticated);
 
   return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated));
 }
 
-function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> {
+function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<number, SeriesAggregate> {
   if (seriesIds.length === 0) return new Map();
 
   const db = getDb();
   const placeholders = seriesIds.map(() => '?').join(',');
+
+  // Watch stats are only needed when authenticated. Compute them per-episode within the single
+  // GROUP BY pass (O(episodes)); the old per-series subqueries re-scanned every episode for every
+  // series (O(series × episodes)), which was the dominant cost on large libraries.
+  const epMinWatch = `(SELECT MIN(je.value) FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  const epMaxWatch = `(SELECT MAX(je.value) FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  const watchCols = authenticated
+    ? `,
+      SUM(CASE WHEN ${epMinWatch} IS NOT NULL THEN 1 ELSE 0 END) as watchedCount,
+      MIN(${epMinWatch}) as firstWatched,
+      MAX(${epMaxWatch}) as lastWatched`
+    : `,
+      0 as watchedCount,
+      NULL as firstWatched,
+      NULL as lastWatched`;
 
   const query = `
     SELECT
       se.SERIESID,
       COUNT(DISTINCT se.LOCALID) as seasonCount,
       COUNT(ep.LOCALID) as episodeCount,
-      SUM(CASE WHEN (
-        SELECT COUNT(*)
-        FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je
-        WHERE je.value <> 'UNSPECIFIED' AND je.value <> ''
-      ) > 0 THEN 1 ELSE 0 END) as watchedCount,
-      (SELECT MIN(je.value) FROM EPISODES e2 JOIN SEASONS s2 ON e2.SEASONID = s2.LOCALID,
-        json_each(CASE WHEN json_valid(e2.VIEWED_HISTORY) THEN e2.VIEWED_HISTORY ELSE '[]' END) je
-        WHERE s2.SERIESID = se.SERIESID AND je.value <> 'UNSPECIFIED' AND je.value <> '') as firstWatched,
-      (SELECT MAX(je.value) FROM EPISODES e2 JOIN SEASONS s2 ON e2.SEASONID = s2.LOCALID,
-        json_each(CASE WHEN json_valid(e2.VIEWED_HISTORY) THEN e2.VIEWED_HISTORY ELSE '[]' END) je
-        WHERE s2.SERIESID = se.SERIESID AND je.value <> 'UNSPECIFIED' AND je.value <> '') as lastWatched,
       SUM(ep.LENGTH) as totalLength,
       SUM(ep.FILESIZE) as totalFilesize,
       MIN(se.SEASONYEAR) as minYear,
@@ -686,7 +690,7 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       GROUP_CONCAT(DISTINCT ep.LANGUAGE) as languages,
       GROUP_CONCAT(DISTINCT NULLIF(se.ANIMESEASON, '')) as animeSeasons,
       GROUP_CONCAT(DISTINCT NULLIF(se.ANIMESTUDIO, '')) as animeStudios,
-      MAX(ep.ADDDATE) as lastAddDate
+      MAX(ep.ADDDATE) as lastAddDate${watchCols}
     FROM SEASONS se
     LEFT JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
     WHERE se.SERIESID IN (${placeholders})
