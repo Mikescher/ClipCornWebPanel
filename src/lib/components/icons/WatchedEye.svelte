@@ -43,7 +43,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 8px;
     background: rgba(0, 0, 0, 0.65);
     color: #f1f5f9;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);

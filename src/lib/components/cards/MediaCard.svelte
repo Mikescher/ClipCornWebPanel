@@ -118,6 +118,7 @@
     <div class="icons-row">
       {#if $showViewedData && item.score !== 6}
         <ScoreIcon score={item.score} />
+        <img src="/icons/score/comment.png" alt="Comment" title="Comment" class="comment-icon" />
       {/if}
     </div>
     <div class="stars-bottom">
@@ -261,6 +262,13 @@
   .more {
     font-size: 0.65rem;
     color: #94a3b8;
+  }
+
+  .comment-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
   }
 
   .stars-bottom {

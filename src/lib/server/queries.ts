@@ -202,6 +202,8 @@ const SERIES_LAST_ADD = `(SELECT MAX(ep.ADDDATE) FROM SEASONS se JOIN EPISODES e
 const SERIES_FIRST_WATCHED = `(SELECT MIN(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
 const SERIES_LAST_WATCHED = `(SELECT MAX(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
 const SERIES_ONLINE = `COALESCE(CAST(ONLINESCORE_NUM AS REAL) / NULLIF(ONLINESCORE_DENOM, 0), -1)`;
+const SERIES_SIZE = `(SELECT COALESCE(SUM(ep.FILESIZE), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
+const SERIES_LENGTH = `(SELECT COALESCE(SUM(ep.LENGTH), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
 
 const TIEBREAK = `, NAME COLLATE NOCASE ASC, LOCALID ASC`;
 const NAME_ORDER = `ORDER BY NAME COLLATE NOCASE ASC, LOCALID ASC`;
@@ -225,6 +227,14 @@ function movieOrderBy(sort: string | undefined, authenticated: boolean): string 
       return `ORDER BY SCORE ASC${TIEBREAK}`;
     case 'user_desc':
       return `ORDER BY SCORE DESC${TIEBREAK}`;
+    case 'size_asc':
+      return `ORDER BY FILESIZE ASC${TIEBREAK}`;
+    case 'size_desc':
+      return `ORDER BY FILESIZE DESC${TIEBREAK}`;
+    case 'duration_asc':
+      return `ORDER BY LENGTH ASC${TIEBREAK}`;
+    case 'duration_desc':
+      return `ORDER BY LENGTH DESC${TIEBREAK}`;
     default:
       return `ORDER BY ADDDATE DESC${TIEBREAK}`;
   }
@@ -249,6 +259,14 @@ function seriesOrderBy(sort: string | undefined, authenticated: boolean): string
       return `ORDER BY SCORE ASC${TIEBREAK}`;
     case 'user_desc':
       return `ORDER BY SCORE DESC${TIEBREAK}`;
+    case 'size_asc':
+      return `ORDER BY ${SERIES_SIZE} ASC${TIEBREAK}`;
+    case 'size_desc':
+      return `ORDER BY ${SERIES_SIZE} DESC${TIEBREAK}`;
+    case 'duration_asc':
+      return `ORDER BY ${SERIES_LENGTH} ASC${TIEBREAK}`;
+    case 'duration_desc':
+      return `ORDER BY ${SERIES_LENGTH} DESC${TIEBREAK}`;
     default:
       return NAME_ORDER;
   }
@@ -259,6 +277,8 @@ function buildComparator(sort: string | undefined, authenticated: boolean): (a: 
   const nameCmp = (a: MediaItem, b: MediaItem) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
   const addedDesc = (a: MediaItem, b: MediaItem) => (b.addDate || '').localeCompare(a.addDate || '') || nameCmp(a, b);
   const onlineVal = (it: MediaItem) => (it.onlineScoreDenom > 0 ? it.onlineScoreNum / it.onlineScoreDenom : -1);
+  const sizeVal = (it: MediaItem) => (it.type === 'movie' ? it.filesize || 0 : it.totalFilesize || 0);
+  const durationVal = (it: MediaItem) => (it.type === 'movie' ? it.length || 0 : it.totalLength || 0);
   const watchedDesc = (field: 'firstWatched' | 'lastWatched') => (a: MediaItem, b: MediaItem) => {
     const av = a[field] || '';
     const bv = b[field] || '';
@@ -284,6 +304,14 @@ function buildComparator(sort: string | undefined, authenticated: boolean): (a: 
       return (a, b) => a.score - b.score || nameCmp(a, b);
     case 'user_desc':
       return (a, b) => b.score - a.score || nameCmp(a, b);
+    case 'size_asc':
+      return (a, b) => sizeVal(a) - sizeVal(b) || nameCmp(a, b);
+    case 'size_desc':
+      return (a, b) => sizeVal(b) - sizeVal(a) || nameCmp(a, b);
+    case 'duration_asc':
+      return (a, b) => durationVal(a) - durationVal(b) || nameCmp(a, b);
+    case 'duration_desc':
+      return (a, b) => durationVal(b) - durationVal(a) || nameCmp(a, b);
     default:
       return addedDesc;
   }

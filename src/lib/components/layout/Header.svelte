@@ -20,16 +20,20 @@
 
   <select class="sort-select" bind:value={$filters.sort} aria-label="Sort order">
     <option value={null}>Default</option>
-    <option value="name">Name (A–Z)</option>
-    <option value="added">Date added</option>
+    <option value="name">Name ↑</option>
+    <option value="added">Date added ↓</option>
     {#if authenticated}
-      <option value="first_watched">First watched</option>
-      <option value="last_watched">Last watched</option>
+      <option value="first_watched">First watched ↓</option>
+      <option value="last_watched">Last watched ↓</option>
     {/if}
     <option value="online_asc">Online score ↑</option>
     <option value="online_desc">Online score ↓</option>
     <option value="user_asc">User score ↑</option>
     <option value="user_desc">User score ↓</option>
+    <option value="size_asc">Size ↑</option>
+    <option value="size_desc">Size ↓</option>
+    <option value="duration_asc">Duration ↑</option>
+    <option value="duration_desc">Duration ↓</option>
   </select>
 
   <button class="filter-btn" onclick={toggleFilters}>
