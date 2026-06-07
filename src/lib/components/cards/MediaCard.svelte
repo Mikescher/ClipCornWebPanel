@@ -5,6 +5,7 @@
   import { getFirstRef } from '$lib/utils/onlineref';
   import { showViewedData } from '$lib/stores/ui';
   import CoverImage from './CoverImage.svelte';
+  import WatchedEye from '../icons/WatchedEye.svelte';
   import LanguageIcon from '../icons/LanguageIcon.svelte';
   import FormatIcon from '../icons/FormatIcon.svelte';
   import FskIcon from '../icons/FskIcon.svelte';
@@ -41,7 +42,14 @@
 </script>
 
 <a {href} class="card">
-  <CoverImage coverId={item.coverId} isSeries={item.type === 'series'} alt={item.name} />
+  <div class="cover-wrap">
+    <CoverImage coverId={item.coverId} isSeries={item.type === 'series'} alt={item.name} />
+    {#if item.watchedState}
+      <div class="viewed-overlay">
+        <WatchedEye half={item.watchedState === 'partial'} idSuffix={`${item.type}${item.id}`} />
+      </div>
+    {/if}
+  </div>
 
   <div class="content">
     <div class="header">
@@ -134,6 +142,31 @@
   .card:hover {
     background: #252530;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .cover-wrap {
+    position: relative;
+    width: 60px;
+    align-self: start;
+  }
+
+  .viewed-overlay {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: flex;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.15s;
+  }
+
+  .card:hover .viewed-overlay {
+    opacity: 0;
+  }
+
+  /* The series mask lives inside CoverImage; hide it on card hover too. */
+  .card:hover :global(.series-overlay) {
+    opacity: 0;
   }
 
   .content {

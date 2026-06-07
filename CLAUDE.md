@@ -103,6 +103,15 @@ Default test database path: `/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.
 
 Override with: `DATABASE_PATH=/path/to/db npm run dev`
 
+## Authentication
+
+- A single shared password gates **personal data** (rating comments + watch history). It is set via the `PANEL_PASSWORD` env variable; if unset, login is impossible and personal data stays hidden.
+- `src/lib/server/auth.ts` derives a SHA-256 token from the password; `src/hooks.server.ts` validates the `cc_auth` httpOnly cookie and sets `locals.authenticated`.
+- `POST /api/auth` logs in (`{ password }`), `DELETE /api/auth` logs out. The eye button (top-right, in `src/lib/components/AuthButton.svelte`, mounted in the root layout) opens the password dialog and calls `invalidateAll()` after login/logout.
+- **Server-side redaction**: `+page.server.ts` load functions must never return `scoreComment`/`viewedHistory` (rating comment / watch history) to unauthenticated clients. Movie/episode/series detail pages each show a Comment section: when locked they send only a `hasComment` boolean (the comment renders blurred client-side), when unlocked they send the real text. The series page shows both the series-level comment (`SERIES.SCORECOMMENT`) and per-season comments (`SEASONS.SCORECOMMENT`, surfaced per season as `hasComment`/`comment`). Watch history is omitted entirely when locked. `api/series` and the series episode rows blank `VIEWED_HISTORY`/`SCORECOMMENT` when locked.
+- **Viewed filter (authenticated only)**: `filters.viewed` (`'full' | 'partial' | 'none'`) filters the root list by watch status. The control only shows when authenticated (`FilterPanel` takes an `authenticated` prop) and the SQL clause is only applied when `authenticated` is true (`movieViewedClause`/`seriesViewedClause` in `queries.ts`) — movies can never be `'partial'`. So a `viewed=` URL param is silently ignored for anonymous clients.
+- **Watched indicators (root view)**: list queries (`getAllMedia`/`getMovies`/`getSeries`) take an `authenticated` flag and, only when true, set `MediaItem.watchedState` (`'full'` = movie watched / all episodes watched; `'partial'` = some episodes watched). Raw `viewedHistory` is never put on list items. `MediaCard` renders a `WatchedEye` badge (half-eye for partial) over the cover bottom-right, hidden on card hover. Series watched counts come from `getSeriesAggregates` (`watchedCount` via `json_each` over `EPISODES.VIEWED_HISTORY`, ignoring `UNSPECIFIED`).
+
 ## Important Notes
 
 - Database is **read-only** - never write to it

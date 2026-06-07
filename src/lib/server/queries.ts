@@ -1,5 +1,6 @@
 import { getDb } from './db';
 import { PAGE_SIZE } from '$lib/constants';
+import { parseViewedHistory } from '$lib/utils/format';
 import type { MediaInfo, Checksums } from '$lib/types';
 
 export type { MediaInfo, Checksums } from '$lib/types';
@@ -75,7 +76,7 @@ export interface EpisodeRow {
   LANGUAGE: string;
   SUBTITLES: string;
   SCORE: number;
-  SCORECOMMENT: number;
+  SCORECOMMENT: string;
   TAGS: string | null;
 }
 
@@ -108,6 +109,7 @@ export interface FilterParams {
   animeseason?: string;
   animestudio?: string;
   version?: string;
+  viewed?: 'full' | 'partial' | 'none';
 }
 
 export interface MediaItem {
@@ -144,9 +146,48 @@ export interface MediaItem {
   // Detail-only (populated by getMovie/getEpisode, not in list queries)
   mediaInfo?: MediaInfo | null;
   checksums?: Checksums;
+  // Personal data — must be redacted server-side for unauthenticated clients
+  scoreComment?: string;
+  // Watched status — only populated when authenticated. 'full' = watched (all episodes for series),
+  // 'partial' = some (but not all) episodes watched. Absent = not watched / hidden.
+  watchedState?: 'full' | 'partial';
 }
 
-export function getMovies(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
+// Watched = at least one VIEWED_HISTORY entry that isn't the 'UNSPECIFIED' placeholder.
+// json_valid guards against empty/malformed JSON (json_each would otherwise throw).
+const MOVIE_WATCHED = `EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+const SERIES_TOTAL_EP = `(SELECT COUNT(*) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
+const SERIES_WATCHED_EP = `(SELECT COUNT(*) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> ''))`;
+
+/** SQL fragment for the movie `viewed` filter. Movies are binary, so 'partial' matches nothing. */
+function movieViewedClause(viewed?: string): string {
+  switch (viewed) {
+    case 'full':
+      return ` AND ${MOVIE_WATCHED}`;
+    case 'none':
+      return ` AND NOT ${MOVIE_WATCHED}`;
+    case 'partial':
+      return ` AND 1=0`;
+    default:
+      return '';
+  }
+}
+
+/** SQL fragment for the series `viewed` filter, comparing watched episodes to total episodes. */
+function seriesViewedClause(viewed?: string): string {
+  switch (viewed) {
+    case 'full':
+      return ` AND ${SERIES_TOTAL_EP} > 0 AND ${SERIES_WATCHED_EP} = ${SERIES_TOTAL_EP}`;
+    case 'partial':
+      return ` AND ${SERIES_WATCHED_EP} > 0 AND ${SERIES_WATCHED_EP} < ${SERIES_TOTAL_EP}`;
+    case 'none':
+      return ` AND ${SERIES_WATCHED_EP} = 0`;
+    default:
+      return '';
+  }
+}
+
+export function getMovies(filters: FilterParams, page: number, authenticated = false): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   const db = getDb();
   let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
@@ -212,6 +253,10 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
     params.push(filters.tags);
   }
 
+  if (authenticated && filters.viewed) {
+    whereClause += movieViewedClause(filters.viewed);
+  }
+
   // Get total count
   const countQuery = `SELECT COUNT(*) as count FROM MOVIES ${whereClause}`;
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
@@ -225,13 +270,13 @@ export function getMovies(filters: FilterParams, page: number): { items: MediaIt
   const items = rows.slice(0, PAGE_SIZE);
 
   return {
-    items: items.map((row) => movieRowToMediaItem(row)),
+    items: items.map((row) => movieRowToMediaItem(row, authenticated)),
     hasMore,
     totalCount
   };
 }
 
-export function getSeries(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
+export function getSeries(filters: FilterParams, page: number, authenticated = false): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   const db = getDb();
   let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
@@ -298,6 +343,10 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   if (filters.tags !== undefined) {
     whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
     params.push(filters.tags);
+  }
+
+  if (authenticated && filters.viewed) {
+    whereClause += seriesViewedClause(filters.viewed);
   }
 
   // Get total count
@@ -317,23 +366,23 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   const aggregates = getSeriesAggregates(seriesIds);
 
   return {
-    items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID))),
+    items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated)),
     hasMore,
     totalCount
   };
 }
 
-export function getAllMedia(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
+export function getAllMedia(filters: FilterParams, page: number, authenticated = false): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
   if (filters.type === 'movie') {
-    return getMovies(filters, page);
+    return getMovies(filters, page, authenticated);
   }
   if (filters.type === 'series') {
-    return getSeries(filters, page);
+    return getSeries(filters, page, authenticated);
   }
 
   // Get both movies and series (all items, no pagination)
-  const movies = getAllMoviesUnpaginated(filters);
-  const series = getAllSeriesUnpaginated(filters);
+  const movies = getAllMoviesUnpaginated(filters, authenticated);
+  const series = getAllSeriesUnpaginated(filters, authenticated);
 
   // Combine and sort by addDate (descending)
   const all = [...movies, ...series];
@@ -351,7 +400,7 @@ export function getAllMedia(filters: FilterParams, page: number): { items: Media
   return { items, hasMore, totalCount };
 }
 
-function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
+function getAllMoviesUnpaginated(filters: FilterParams, authenticated = false): MediaItem[] {
   const db = getDb();
   let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
@@ -417,13 +466,17 @@ function getAllMoviesUnpaginated(filters: FilterParams): MediaItem[] {
     params.push(filters.tags);
   }
 
+  if (authenticated && filters.viewed) {
+    whereClause += movieViewedClause(filters.viewed);
+  }
+
   const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC`;
   const rows = db.prepare(query).all(...params) as MovieRow[];
 
-  return rows.map((row) => movieRowToMediaItem(row));
+  return rows.map((row) => movieRowToMediaItem(row, authenticated));
 }
 
-function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
+function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): MediaItem[] {
   const db = getDb();
   let whereClause = 'WHERE 1=1';
   const params: (string | number)[] = [];
@@ -492,6 +545,10 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
     params.push(filters.tags);
   }
 
+  if (authenticated && filters.viewed) {
+    whereClause += seriesViewedClause(filters.viewed);
+  }
+
   const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC`;
   const rows = db.prepare(query).all(...params) as SeriesRow[];
 
@@ -499,7 +556,7 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
   const seriesIds = rows.map((s) => s.LOCALID);
   const aggregates = getSeriesAggregates(seriesIds);
 
-  return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID)));
+  return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated));
 }
 
 function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> {
@@ -513,6 +570,11 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       se.SERIESID,
       COUNT(DISTINCT se.LOCALID) as seasonCount,
       COUNT(ep.LOCALID) as episodeCount,
+      SUM(CASE WHEN (
+        SELECT COUNT(*)
+        FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je
+        WHERE je.value <> 'UNSPECIFIED' AND je.value <> ''
+      ) > 0 THEN 1 ELSE 0 END) as watchedCount,
       SUM(ep.LENGTH) as totalLength,
       SUM(ep.FILESIZE) as totalFilesize,
       MIN(se.SEASONYEAR) as minYear,
@@ -531,6 +593,7 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
     SERIESID: number;
     seasonCount: number;
     episodeCount: number;
+    watchedCount: number;
     totalLength: number;
     totalFilesize: number;
     minYear: number;
@@ -558,6 +621,7 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
     result.set(row.SERIESID, {
       seasonCount: row.seasonCount || 0,
       episodeCount: row.episodeCount || 0,
+      watchedCount: row.watchedCount || 0,
       totalLength: row.totalLength || 0,
       totalFilesize: row.totalFilesize || 0,
       yearRange: row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
@@ -574,6 +638,7 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
 interface SeriesAggregate {
   seasonCount: number;
   episodeCount: number;
+  watchedCount: number;
   totalLength: number;
   totalFilesize: number;
   yearRange: string;
@@ -599,8 +664,8 @@ function flattenConcatJsonStrings(concat: string | null): string[] {
   return Array.from(set).sort();
 }
 
-function movieRowToMediaItem(row: MovieRow): MediaItem {
-  return {
+function movieRowToMediaItem(row: MovieRow, authenticated = false): MediaItem {
+  const item: MediaItem = {
     id: row.LOCALID,
     type: 'movie',
     name: row.NAME,
@@ -621,15 +686,20 @@ function movieRowToMediaItem(row: MovieRow): MediaItem {
     format: row.FORMAT,
     length: row.LENGTH,
     filesize: row.FILESIZE,
-    viewedHistory: row.VIEWED_HISTORY,
     specialVersion: parseJsonArraySafe(row.SPECIALVERSION),
     animeSeason: parseJsonArraySafe(row.ANIMESEASON),
     animeStudio: parseJsonArraySafe(row.ANIMESTUDIO)
   };
+  // viewedHistory is personal data — never include it in list items. getMovie() sets it
+  // explicitly for the detail page, where the load function gates it behind authentication.
+  if (authenticated && parseViewedHistory(row.VIEWED_HISTORY).viewed) {
+    item.watchedState = 'full';
+  }
+  return item;
 }
 
-function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): MediaItem {
-  return {
+function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate, authenticated = false): MediaItem {
+  const item: MediaItem = {
     id: row.LOCALID,
     type: 'series',
     name: row.NAME,
@@ -653,6 +723,10 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): Medi
     animeSeason: aggregate ? aggregate.animeSeason : [],
     animeStudio: aggregate ? aggregate.animeStudio : []
   };
+  if (authenticated && aggregate && aggregate.episodeCount > 0 && aggregate.watchedCount > 0) {
+    item.watchedState = aggregate.watchedCount >= aggregate.episodeCount ? 'full' : 'partial';
+  }
+  return item;
 }
 
 function parseIntArrayFromJson(value: string | null): number[] {
@@ -747,6 +821,8 @@ export function getMovie(id: number): MediaItem | null {
   const raw = row as unknown as Record<string, unknown>;
   item.mediaInfo = extractMediaInfo(raw);
   item.checksums = extractChecksums(raw);
+  item.scoreComment = row.SCORECOMMENT ?? '';
+  item.viewedHistory = row.VIEWED_HISTORY;
   return item;
 }
 
@@ -767,6 +843,7 @@ export interface EpisodeDetail {
   tags: number[];
   score: number;
   viewedHistory: string;
+  scoreComment: string;
   mediaInfo: MediaInfo | null;
   checksums: Checksums;
 }
@@ -808,6 +885,7 @@ export function getEpisode(id: number): EpisodeDetail | null {
     tags: parseIntArrayFromJson(row.TAGS),
     score: row.SCORE,
     viewedHistory: row.VIEWED_HISTORY,
+    scoreComment: row.SCORECOMMENT ?? '',
     mediaInfo: extractMediaInfo(raw),
     checksums: extractChecksums(raw)
   };
@@ -819,7 +897,9 @@ export function getSeriesById(id: number): MediaItem | null {
   if (!row) return null;
 
   const aggregates = getSeriesAggregates([id]);
-  return seriesRowToMediaItem(row, aggregates.get(id));
+  const item = seriesRowToMediaItem(row, aggregates.get(id));
+  item.scoreComment = row.SCORECOMMENT ?? '';
+  return item;
 }
 
 export function getSeriesSeasons(seriesId: number): SeasonRow[] {

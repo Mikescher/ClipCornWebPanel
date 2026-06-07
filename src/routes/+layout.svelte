@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
+  import type { LayoutData } from './$types';
+  import AuthButton from '$lib/components/AuthButton.svelte';
   import '../app.css';
 
-  let { children }: { children: Snippet } = $props();
+  let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
   onMount(() => {
     const loader = document.getElementById('initial-loader');
@@ -14,6 +16,7 @@
 </script>
 
 <div class="app">
+  <AuthButton authenticated={data.authenticated} />
   {@render children()}
 </div>
 

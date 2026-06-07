@@ -9,13 +9,15 @@
     years,
     animeSeasons,
     animeStudios,
-    versions
+    versions,
+    authenticated = false
   }: {
     groups: GroupRow[];
     years: number[];
     animeSeasons: string[];
     animeStudios: string[];
     versions: string[];
+    authenticated?: boolean;
   } = $props();
 
   function clearFilters() {
@@ -58,6 +60,31 @@
         </label>
       </div>
     </div>
+
+    <!-- Viewed Filter (authenticated only) -->
+    {#if authenticated}
+      <div class="filter-group">
+        <h3>Viewed</h3>
+        <div class="options">
+          <label class:active={$filters.viewed === null}>
+            <input type="radio" name="viewed" checked={$filters.viewed === null} onchange={() => filters.update((f) => ({ ...f, viewed: null }))} />
+            All
+          </label>
+          <label class:active={$filters.viewed === 'full'}>
+            <input type="radio" name="viewed" checked={$filters.viewed === 'full'} onchange={() => filters.update((f) => ({ ...f, viewed: 'full' }))} />
+            Fully
+          </label>
+          <label class:active={$filters.viewed === 'partial'}>
+            <input type="radio" name="viewed" checked={$filters.viewed === 'partial'} onchange={() => filters.update((f) => ({ ...f, viewed: 'partial' }))} />
+            Partial
+          </label>
+          <label class:active={$filters.viewed === 'none'}>
+            <input type="radio" name="viewed" checked={$filters.viewed === 'none'} onchange={() => filters.update((f) => ({ ...f, viewed: 'none' }))} />
+            None
+          </label>
+        </div>
+      </div>
+    {/if}
 
     <!-- Groups Filter -->
     {#if groups.length > 0}

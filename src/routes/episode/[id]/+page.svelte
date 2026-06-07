@@ -26,6 +26,13 @@
 
   <div class="content">
     <nav class="breadcrumb">
+      <a href="/" class="home" aria-label="Back to list" title="Back to list">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5 12 3l9 6.5" />
+          <path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
+        </svg>
+      </a>
+      <span class="sep">/</span>
       <a href={`/series/${episode.seriesId}`}>{episode.seriesName}</a>
       <span class="sep">/</span>
       <span>{seasonLabel}</span>
@@ -94,6 +101,32 @@
               </span>
             {/each}
           </div>
+        </div>
+      {/if}
+
+      <!-- Rating Comment -->
+      {#if data.hasComment}
+        <div class="info-group">
+          <h2>Comment</h2>
+          {#if data.authenticated && data.comment}
+            <p class="comment">{data.comment}</p>
+          {:else}
+            <p class="comment blurred" aria-hidden="true">
+              A personal rating note exists for this episode. Unlock to read it.
+            </p>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Watch History -->
+      {#if data.authenticated && data.viewedHistory && data.viewedHistory.length > 0}
+        <div class="info-group">
+          <h2>Watch History</h2>
+          <ul class="history-list">
+            {#each data.viewedHistory as watched}
+              <li>{watched}</li>
+            {/each}
+          </ul>
         </div>
       {/if}
 
@@ -168,6 +201,16 @@
     text-decoration: underline;
   }
 
+  .breadcrumb a.home {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .breadcrumb a.home:hover {
+    text-decoration: none;
+    color: #60a5fa;
+  }
+
   .breadcrumb .sep {
     color: #475569;
   }
@@ -227,6 +270,36 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.85rem;
+  }
+
+  .comment {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+
+  .comment.blurred {
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+    color: #94a3b8;
+  }
+
+  .history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .history-list li {
+    width: fit-content;
+    padding: 0.375rem 0.625rem;
+    background: #2a2a3a;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
   }
 
   @media (min-width: 640px) {

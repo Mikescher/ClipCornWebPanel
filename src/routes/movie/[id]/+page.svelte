@@ -203,6 +203,32 @@
         </div>
       {/if}
 
+      <!-- Rating Comment -->
+      {#if data.hasComment}
+        <div class="info-group">
+          <h2>Comment</h2>
+          {#if data.authenticated && data.comment}
+            <p class="comment">{data.comment}</p>
+          {:else}
+            <p class="comment blurred" aria-hidden="true">
+              A personal rating note exists for this title. Unlock to read it.
+            </p>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Watch History -->
+      {#if data.authenticated && data.viewedHistory && data.viewedHistory.length > 0}
+        <div class="info-group">
+          <h2>Watch History</h2>
+          <ul class="history-list">
+            {#each data.viewedHistory as watched}
+              <li>{watched}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+
       <!-- Checksums -->
       <ChecksumsSection checksums={movie.checksums} />
 
@@ -343,6 +369,36 @@
     align-items: center;
     gap: 0.375rem;
     font-size: 0.85rem;
+  }
+
+  .comment {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+
+  .comment.blurred {
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+    color: #94a3b8;
+  }
+
+  .history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .history-list li {
+    width: fit-content;
+    padding: 0.375rem 0.625rem;
+    background: #2a2a3a;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
   }
 
   .external-links {

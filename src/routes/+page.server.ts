@@ -10,7 +10,7 @@ import {
 } from '$lib/server/queries';
 import type { FilterParams } from '$lib/server/queries';
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
   const page = parseInt(url.searchParams.get('page') || '0');
 
   const filters: FilterParams = {
@@ -26,10 +26,11 @@ export const load: PageServerLoad = async ({ url }) => {
     type: (url.searchParams.get('type') as 'movie' | 'series' | undefined) || undefined,
     animeseason: url.searchParams.get('animeseason') || undefined,
     animestudio: url.searchParams.get('animestudio') || undefined,
-    version: url.searchParams.get('version') || undefined
+    version: url.searchParams.get('version') || undefined,
+    viewed: (url.searchParams.get('viewed') as 'full' | 'partial' | 'none' | null) || undefined
   };
 
-  const { items, hasMore } = getAllMedia(filters, page);
+  const { items, hasMore } = getAllMedia(filters, page, locals.authenticated);
   const groups = getGroups();
   const years = getDistinctYears();
   const animeSeasons = getDistinctAnimeSeasons();

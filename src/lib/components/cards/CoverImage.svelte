@@ -66,5 +66,6 @@
     width: 40px;
     height: 40px;
     object-fit: cover;
+    transition: opacity 0.15s;
   }
 </style>

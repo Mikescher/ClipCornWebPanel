@@ -30,6 +30,8 @@
         return String(value);
       case 'version':
         return String(value);
+      case 'viewed':
+        return value === 'full' ? 'Fully viewed' : value === 'partial' ? 'Partially viewed' : 'Not viewed';
       default:
         return String(value);
     }

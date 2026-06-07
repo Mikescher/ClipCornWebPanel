@@ -2,9 +2,10 @@
   import { goto } from '$app/navigation';
   import type { PageData } from './$types';
   import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, TAGS } from '$lib/constants';
-  import { formatSize, formatLength, formatLengthShort } from '$lib/utils/format';
+  import { formatSize, formatLength, formatLengthShort, parseViewedHistory } from '$lib/utils/format';
   import { parseOnlineRefs, ONLINE_REF_NAMES } from '$lib/utils/onlineref';
   import CoverImage from '$lib/components/cards/CoverImage.svelte';
+  import WatchedEye from '$lib/components/icons/WatchedEye.svelte';
   import LanguageIcon from '$lib/components/icons/LanguageIcon.svelte';
   import FormatIcon from '$lib/components/icons/FormatIcon.svelte';
   import FskIcon from '$lib/components/icons/FskIcon.svelte';
@@ -14,7 +15,10 @@
 
   let { data }: { data: PageData } = $props();
   const series = data.series;
-  const seasons = data.seasons;
+  // Sort the season list by title (numeric-aware so "Season 2" precedes "Season 10")
+  const seasons = [...data.seasons].sort((a, b) =>
+    (a.NAME || '').localeCompare(b.NAME || '', undefined, { numeric: true, sensitivity: 'base' })
+  );
 
   let selectedSeasonIndex = $state(0);
   const selectedSeason = $derived(seasons[selectedSeasonIndex]);
@@ -26,6 +30,11 @@
   const seasonOnlineRefs = seasons
     .map((s) => ({ name: s.NAME, refs: parseOnlineRefs(s.ONLINEREF).filter((r) => r.url) }))
     .filter((s) => s.refs.length > 0);
+
+  // Whether an episode has been watched (VIEWED_HISTORY only sent when authenticated)
+  function isEpisodeWatched(value: string): boolean {
+    return parseViewedHistory(value).viewed;
+  }
 
   // Parse the per-episode language list (JSON int array)
   function getEpisodeLanguages(value: string): number[] {
@@ -209,6 +218,20 @@
           {/each}
         </div>
       {/if}
+
+      <!-- Comment -->
+      {#if data.hasComment}
+        <div class="info-group">
+          <h2>Comment</h2>
+          {#if data.authenticated && data.comment}
+            <p class="comment">{data.comment}</p>
+          {:else}
+            <p class="comment blurred" aria-hidden="true">
+              A personal rating note exists for this show. Unlock to read it.
+            </p>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -227,11 +250,26 @@
       </div>
 
       {#if selectedSeason}
+        {#if selectedSeason.hasComment}
+          <div class="season-comment">
+            {#if data.authenticated && selectedSeason.comment}
+              <p class="comment">{selectedSeason.comment}</p>
+            {:else}
+              <p class="comment blurred" aria-hidden="true">
+                A personal note exists for this season. Unlock to read it.
+              </p>
+            {/if}
+          </div>
+        {/if}
+
         <div class="episodes-table-container">
           <table class="episodes-table">
             <thead>
               <tr>
                 <th class="col-ep">#</th>
+                {#if data.authenticated}
+                  <th class="col-viewed" aria-label="Viewed"></th>
+                {/if}
                 <th class="col-name">Name</th>
                 <th class="col-length">Length</th>
                 <th class="col-size">Size</th>
@@ -255,6 +293,13 @@
                   }}
                 >
                   <td class="col-ep">{episode.EPISODE}</td>
+                  {#if data.authenticated}
+                    <td class="col-viewed">
+                      {#if isEpisodeWatched(episode.VIEWED_HISTORY)}
+                        <WatchedEye badge={false} size={15} idSuffix={`ep${episode.LOCALID}`} />
+                      {/if}
+                    </td>
+                  {/if}
                   <td class="col-name">{episode.NAME}</td>
                   <td class="col-length">{formatLengthShort(episode.LENGTH)}</td>
                   <td class="col-size">{formatSize(episode.FILESIZE)}</td>
@@ -407,6 +452,24 @@
     font-size: 0.85rem;
   }
 
+  .comment {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+
+  .comment.blurred {
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+    color: #94a3b8;
+  }
+
+  .season-comment {
+    margin-bottom: 1rem;
+  }
+
   .external-links {
     display: flex;
     flex-wrap: wrap;
@@ -536,6 +599,18 @@
 
   .col-name {
     min-width: 150px;
+  }
+
+  .col-viewed {
+    width: 24px;
+    padding-left: 0;
+    padding-right: 0;
+    text-align: center;
+    color: #94a3b8;
+  }
+
+  .col-viewed :global(.plain) {
+    vertical-align: middle;
   }
 
   .col-length,

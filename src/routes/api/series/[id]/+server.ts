@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getSeriesById, getSeriesSeasons, getSeasonEpisodes } from '$lib/server/queries';
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
   const id = parseInt(params.id);
   if (isNaN(id)) {
     throw error(400, 'Invalid series ID');
@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ params }) => {
         id: ep.LOCALID,
         episode: ep.EPISODE,
         name: ep.NAME,
-        viewedHistory: ep.VIEWED_HISTORY,
+        viewedHistory: locals.authenticated ? ep.VIEWED_HISTORY : '',
         length: ep.LENGTH,
         format: ep.FORMAT,
         filesize: ep.FILESIZE,

@@ -8,6 +8,7 @@ HASH=$(shell git rev-parse HEAD)
 run:
 	[ -f "/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" ] && cp "/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" "/home/mike/Code/private/ClipCorn/ClipCornWebPanel/_run-data/ClipCornDB.db" || true
 	export DATABASE_PATH="/home/mike/Code/private/ClipCorn/ClipCornWebPanel/_run-data/ClipCornDB.db" && \
+	export PANEL_PASSWORD="test" && \
 	. ${HOME}/.nvm/nvm.sh && nvm use && npm i && npm run dev
 
 setup:
