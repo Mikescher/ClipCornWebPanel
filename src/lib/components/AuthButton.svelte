@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
+  // no $app/navigation import: we do a full page reload after login/logout
 
   let { authenticated }: { authenticated: boolean } = $props();
 
@@ -36,7 +36,7 @@
       if (res.ok) {
         password = '';
         open = false;
-        await invalidateAll();
+        location.reload();
       } else {
         errorMsg = 'Incorrect password';
       }
@@ -52,7 +52,7 @@
     try {
       await fetch('/api/auth', { method: 'DELETE' });
       open = false;
-      await invalidateAll();
+      location.reload();
     } finally {
       loading = false;
     }
