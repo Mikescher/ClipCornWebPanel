@@ -116,7 +116,7 @@
   <title>ClipCorn</title>
 </svelte:head>
 
-<Header />
+<Header authenticated={data.authenticated} />
 
 <FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} authenticated={data.authenticated} />
 

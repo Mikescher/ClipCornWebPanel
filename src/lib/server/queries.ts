@@ -110,6 +110,7 @@ export interface FilterParams {
   animestudio?: string;
   version?: string;
   viewed?: 'full' | 'partial' | 'none';
+  sort?: string;
 }
 
 export interface MediaItem {
@@ -151,6 +152,9 @@ export interface MediaItem {
   // Watched status — only populated when authenticated. 'full' = watched (all episodes for series),
   // 'partial' = some (but not all) episodes watched. Absent = not watched / hidden.
   watchedState?: 'full' | 'partial';
+  // First/last watch timestamps — only populated when authenticated; used for watch-based sorting.
+  firstWatched?: string;
+  lastWatched?: string;
 }
 
 // Watched = at least one VIEWED_HISTORY entry that isn't the 'UNSPECIFIED' placeholder.
@@ -184,6 +188,104 @@ function seriesViewedClause(viewed?: string): string {
       return ` AND ${SERIES_WATCHED_EP} = 0`;
     default:
       return '';
+  }
+}
+
+// --- Sorting ---
+// Watch timestamps stored as "YYYY-MM-DD HH:MM:SS" sort lexically = chronologically.
+const MOVIE_FIRST_WATCHED = `(SELECT MIN(je.value) FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+const MOVIE_LAST_WATCHED = `(SELECT MAX(je.value) FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+// COALESCE to -1 so unrated items sort below any real score (first in ASC, last in DESC).
+const MOVIE_ONLINE = `COALESCE(CAST(ONLINESCORE_NUM AS REAL) / NULLIF(ONLINESCORE_DENOM, 0), -1)`;
+
+const SERIES_LAST_ADD = `(SELECT MAX(ep.ADDDATE) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
+const SERIES_FIRST_WATCHED = `(SELECT MIN(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+const SERIES_LAST_WATCHED = `(SELECT MAX(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+const SERIES_ONLINE = `COALESCE(CAST(ONLINESCORE_NUM AS REAL) / NULLIF(ONLINESCORE_DENOM, 0), -1)`;
+
+const TIEBREAK = `, NAME COLLATE NOCASE ASC, LOCALID ASC`;
+const NAME_ORDER = `ORDER BY NAME COLLATE NOCASE ASC, LOCALID ASC`;
+
+/** Build the `ORDER BY ...` clause for the paginated movie query. */
+function movieOrderBy(sort: string | undefined, authenticated: boolean): string {
+  switch (sort) {
+    case 'name':
+      return NAME_ORDER;
+    case 'added':
+      return `ORDER BY ADDDATE DESC${TIEBREAK}`;
+    case 'first_watched':
+      return authenticated ? `ORDER BY ${MOVIE_FIRST_WATCHED} DESC${TIEBREAK}` : `ORDER BY ADDDATE DESC${TIEBREAK}`;
+    case 'last_watched':
+      return authenticated ? `ORDER BY ${MOVIE_LAST_WATCHED} DESC${TIEBREAK}` : `ORDER BY ADDDATE DESC${TIEBREAK}`;
+    case 'online_asc':
+      return `ORDER BY ${MOVIE_ONLINE} ASC${TIEBREAK}`;
+    case 'online_desc':
+      return `ORDER BY ${MOVIE_ONLINE} DESC${TIEBREAK}`;
+    case 'user_asc':
+      return `ORDER BY SCORE ASC${TIEBREAK}`;
+    case 'user_desc':
+      return `ORDER BY SCORE DESC${TIEBREAK}`;
+    default:
+      return `ORDER BY ADDDATE DESC${TIEBREAK}`;
+  }
+}
+
+/** Build the `ORDER BY ...` clause for the paginated series query. */
+function seriesOrderBy(sort: string | undefined, authenticated: boolean): string {
+  switch (sort) {
+    case 'name':
+      return NAME_ORDER;
+    case 'added':
+      return `ORDER BY ${SERIES_LAST_ADD} DESC${TIEBREAK}`;
+    case 'first_watched':
+      return authenticated ? `ORDER BY ${SERIES_FIRST_WATCHED} DESC${TIEBREAK}` : NAME_ORDER;
+    case 'last_watched':
+      return authenticated ? `ORDER BY ${SERIES_LAST_WATCHED} DESC${TIEBREAK}` : NAME_ORDER;
+    case 'online_asc':
+      return `ORDER BY ${SERIES_ONLINE} ASC${TIEBREAK}`;
+    case 'online_desc':
+      return `ORDER BY ${SERIES_ONLINE} DESC${TIEBREAK}`;
+    case 'user_asc':
+      return `ORDER BY SCORE ASC${TIEBREAK}`;
+    case 'user_desc':
+      return `ORDER BY SCORE DESC${TIEBREAK}`;
+    default:
+      return NAME_ORDER;
+  }
+}
+
+/** JS comparator mirroring the SQL ordering, used for the merged (movies + series) list. */
+function buildComparator(sort: string | undefined, authenticated: boolean): (a: MediaItem, b: MediaItem) => number {
+  const nameCmp = (a: MediaItem, b: MediaItem) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+  const addedDesc = (a: MediaItem, b: MediaItem) => (b.addDate || '').localeCompare(a.addDate || '') || nameCmp(a, b);
+  const onlineVal = (it: MediaItem) => (it.onlineScoreDenom > 0 ? it.onlineScoreNum / it.onlineScoreDenom : -1);
+  const watchedDesc = (field: 'firstWatched' | 'lastWatched') => (a: MediaItem, b: MediaItem) => {
+    const av = a[field] || '';
+    const bv = b[field] || '';
+    if (av && !bv) return -1; // watched items before unwatched
+    if (!av && bv) return 1;
+    if (av !== bv) return bv.localeCompare(av);
+    return nameCmp(a, b);
+  };
+  switch (sort) {
+    case 'name':
+      return nameCmp;
+    case 'added':
+      return addedDesc;
+    case 'first_watched':
+      return authenticated ? watchedDesc('firstWatched') : addedDesc;
+    case 'last_watched':
+      return authenticated ? watchedDesc('lastWatched') : addedDesc;
+    case 'online_asc':
+      return (a, b) => onlineVal(a) - onlineVal(b) || nameCmp(a, b);
+    case 'online_desc':
+      return (a, b) => onlineVal(b) - onlineVal(a) || nameCmp(a, b);
+    case 'user_asc':
+      return (a, b) => a.score - b.score || nameCmp(a, b);
+    case 'user_desc':
+      return (a, b) => b.score - a.score || nameCmp(a, b);
+    default:
+      return addedDesc;
   }
 }
 
@@ -262,7 +364,7 @@ export function getMovies(filters: FilterParams, page: number, authenticated = f
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
   // Get paginated results
-  const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC LIMIT ? OFFSET ?`;
+  const query = `SELECT * FROM MOVIES ${whereClause} ${movieOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
   const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
 
   const rows = db.prepare(query).all(...paginatedParams) as MovieRow[];
@@ -354,7 +456,7 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
   // Get paginated results
-  const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC LIMIT ? OFFSET ?`;
+  const query = `SELECT * FROM SERIES ${whereClause} ${seriesOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
   const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
 
   const rows = db.prepare(query).all(...paginatedParams) as SeriesRow[];
@@ -384,13 +486,9 @@ export function getAllMedia(filters: FilterParams, page: number, authenticated =
   const movies = getAllMoviesUnpaginated(filters, authenticated);
   const series = getAllSeriesUnpaginated(filters, authenticated);
 
-  // Combine and sort by addDate (descending)
+  // Combine and sort according to the requested order (default: most recently added first)
   const all = [...movies, ...series];
-  all.sort((a, b) => {
-    const dateA = a.addDate || '1970-01-01';
-    const dateB = b.addDate || '1970-01-01';
-    return dateB.localeCompare(dateA);
-  });
+  all.sort(buildComparator(filters.sort, authenticated));
 
   const start = page * PAGE_SIZE;
   const items = all.slice(start, start + PAGE_SIZE);
@@ -575,6 +673,12 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
         FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je
         WHERE je.value <> 'UNSPECIFIED' AND je.value <> ''
       ) > 0 THEN 1 ELSE 0 END) as watchedCount,
+      (SELECT MIN(je.value) FROM EPISODES e2 JOIN SEASONS s2 ON e2.SEASONID = s2.LOCALID,
+        json_each(CASE WHEN json_valid(e2.VIEWED_HISTORY) THEN e2.VIEWED_HISTORY ELSE '[]' END) je
+        WHERE s2.SERIESID = se.SERIESID AND je.value <> 'UNSPECIFIED' AND je.value <> '') as firstWatched,
+      (SELECT MAX(je.value) FROM EPISODES e2 JOIN SEASONS s2 ON e2.SEASONID = s2.LOCALID,
+        json_each(CASE WHEN json_valid(e2.VIEWED_HISTORY) THEN e2.VIEWED_HISTORY ELSE '[]' END) je
+        WHERE s2.SERIESID = se.SERIESID AND je.value <> 'UNSPECIFIED' AND je.value <> '') as lastWatched,
       SUM(ep.LENGTH) as totalLength,
       SUM(ep.FILESIZE) as totalFilesize,
       MIN(se.SEASONYEAR) as minYear,
@@ -594,6 +698,8 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
     seasonCount: number;
     episodeCount: number;
     watchedCount: number;
+    firstWatched: string | null;
+    lastWatched: string | null;
     totalLength: number;
     totalFilesize: number;
     minYear: number;
@@ -622,6 +728,8 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       seasonCount: row.seasonCount || 0,
       episodeCount: row.episodeCount || 0,
       watchedCount: row.watchedCount || 0,
+      firstWatched: row.firstWatched || undefined,
+      lastWatched: row.lastWatched || undefined,
       totalLength: row.totalLength || 0,
       totalFilesize: row.totalFilesize || 0,
       yearRange: row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
@@ -639,6 +747,8 @@ interface SeriesAggregate {
   seasonCount: number;
   episodeCount: number;
   watchedCount: number;
+  firstWatched?: string;
+  lastWatched?: string;
   totalLength: number;
   totalFilesize: number;
   yearRange: string;
@@ -692,8 +802,14 @@ function movieRowToMediaItem(row: MovieRow, authenticated = false): MediaItem {
   };
   // viewedHistory is personal data — never include it in list items. getMovie() sets it
   // explicitly for the detail page, where the load function gates it behind authentication.
-  if (authenticated && parseViewedHistory(row.VIEWED_HISTORY).viewed) {
-    item.watchedState = 'full';
+  if (authenticated) {
+    const { viewed, history } = parseViewedHistory(row.VIEWED_HISTORY);
+    if (viewed) {
+      item.watchedState = 'full';
+      const sorted = [...history].sort();
+      item.firstWatched = sorted[0];
+      item.lastWatched = sorted[sorted.length - 1];
+    }
   }
   return item;
 }
@@ -723,8 +839,12 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate, authe
     animeSeason: aggregate ? aggregate.animeSeason : [],
     animeStudio: aggregate ? aggregate.animeStudio : []
   };
-  if (authenticated && aggregate && aggregate.episodeCount > 0 && aggregate.watchedCount > 0) {
-    item.watchedState = aggregate.watchedCount >= aggregate.episodeCount ? 'full' : 'partial';
+  if (authenticated && aggregate) {
+    if (aggregate.episodeCount > 0 && aggregate.watchedCount > 0) {
+      item.watchedState = aggregate.watchedCount >= aggregate.episodeCount ? 'full' : 'partial';
+    }
+    if (aggregate.firstWatched) item.firstWatched = aggregate.firstWatched;
+    if (aggregate.lastWatched) item.lastWatched = aggregate.lastWatched;
   }
   return item;
 }

@@ -45,6 +45,7 @@ ClipCorn Web Panel is a SvelteKit application for browsing a movie/series databa
 - **Bottom sheet filters**: On mobile, filters slide up from bottom
 - **Sidebar filters**: On desktop (>1024px), filters are fixed left sidebar
 - **Viewed data hidden by default**: Eye icon in bottom-left toggles visibility
+- **Sort dropdown**: Beside the search bar in `Header.svelte`, bound to `filters.sort` (URL-synced, but excluded from the active-filter chip count). Options: default, name, date added, online/user score (asc/desc), plus first/last watched (authenticated only). Ordering lives in `queries.ts`: `movieOrderBy`/`seriesOrderBy` build the SQL `ORDER BY` for the paginated type-specific queries, and `buildComparator` does the equivalent in JS for the merged (movies + series) list. Watch-based sorts fall back to default when not authenticated; `firstWatched`/`lastWatched` are only put on `MediaItem` when authenticated.
 
 ### State Management
 

@@ -49,6 +49,7 @@
   let activeFilters = $derived(
     Object.entries($filters)
       .filter(([key, value]) => {
+        if (key === 'sort') return false; // sort is shown in the header, not as a filter chip
         if (key === 'search') return value !== '';
         return value !== null;
       })

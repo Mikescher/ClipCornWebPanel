@@ -15,6 +15,7 @@ export interface FilterState {
   animestudio: string | null;
   version: string | null;
   viewed: 'full' | 'partial' | 'none' | null;
+  sort: string | null;
 }
 
 export const defaultFilters: FilterState = {
@@ -31,7 +32,8 @@ export const defaultFilters: FilterState = {
   animeseason: null,
   animestudio: null,
   version: null,
-  viewed: null
+  viewed: null,
+  sort: null
 };
 
 export const filters = writable<FilterState>({ ...defaultFilters });
@@ -71,6 +73,7 @@ export function filtersToParams(f: FilterState): URLSearchParams {
   if (f.animestudio !== null) params.set('animestudio', f.animestudio);
   if (f.version !== null) params.set('version', f.version);
   if (f.viewed !== null) params.set('viewed', f.viewed);
+  if (f.sort !== null) params.set('sort', f.sort);
   return params;
 }
 
@@ -89,6 +92,7 @@ export function paramsToFilters(params: URLSearchParams): FilterState {
     animeseason: params.get('animeseason'),
     animestudio: params.get('animestudio'),
     version: params.get('version'),
-    viewed: (params.get('viewed') as 'full' | 'partial' | 'none' | null) || null
+    viewed: (params.get('viewed') as 'full' | 'partial' | 'none' | null) || null,
+    sort: params.get('sort')
   };
 }

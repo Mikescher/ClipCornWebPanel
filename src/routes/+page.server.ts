@@ -27,7 +27,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     animeseason: url.searchParams.get('animeseason') || undefined,
     animestudio: url.searchParams.get('animestudio') || undefined,
     version: url.searchParams.get('version') || undefined,
-    viewed: (url.searchParams.get('viewed') as 'full' | 'partial' | 'none' | null) || undefined
+    viewed: (url.searchParams.get('viewed') as 'full' | 'partial' | 'none' | null) || undefined,
+    sort: url.searchParams.get('sort') || undefined
   };
 
   const { items, hasMore } = getAllMedia(filters, page, locals.authenticated);

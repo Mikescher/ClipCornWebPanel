@@ -1,7 +1,9 @@
 <script lang="ts">
   import { filterPanelOpen } from '$lib/stores/ui';
-  import { activeFiltersCount } from '$lib/stores/filters';
+  import { activeFiltersCount, filters } from '$lib/stores/filters';
   import SearchInput from '../filters/SearchInput.svelte';
+
+  let { authenticated = false }: { authenticated?: boolean } = $props();
 
   function toggleFilters() {
     filterPanelOpen.update((v) => !v);
@@ -15,6 +17,20 @@
   </a>
 
   <SearchInput />
+
+  <select class="sort-select" bind:value={$filters.sort} aria-label="Sort order">
+    <option value={null}>Default</option>
+    <option value="name">Name (A–Z)</option>
+    <option value="added">Date added</option>
+    {#if authenticated}
+      <option value="first_watched">First watched</option>
+      <option value="last_watched">Last watched</option>
+    {/if}
+    <option value="online_asc">Online score ↑</option>
+    <option value="online_desc">Online score ↓</option>
+    <option value="user_asc">User score ↑</option>
+    <option value="user_desc">User score ↓</option>
+  </select>
 
   <button class="filter-btn" onclick={toggleFilters}>
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -56,6 +72,22 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: #3b82f6;
+  }
+
+  .sort-select {
+    flex-shrink: 0;
+    max-width: 9rem;
+    padding: 0.5rem;
+    background: #2a2a3a;
+    border: 1px solid #363648;
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+  }
+
+  .sort-select:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
   }
 
   .filter-btn {
