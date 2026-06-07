@@ -42,8 +42,6 @@ export interface SeriesRow {
   SCORECOMMENT: string;
   COVERID: number;
   SPECIALVERSION: string | null;
-  ANIMESEASON: string | null;
-  ANIMESTUDIO: string | null;
   TAGS: string | null;
 }
 
@@ -56,6 +54,8 @@ export interface SeasonRow {
   SCORE: number;
   SCORECOMMENT: string;
   ONLINEREF: string;
+  ANIMESEASON: string | null;
+  ANIMESTUDIO: string | null;
 }
 
 export interface EpisodeRow {
@@ -275,12 +275,12 @@ export function getSeries(filters: FilterParams, page: number): { items: MediaIt
   }
 
   if (filters.animeseason) {
-    whereClause += ` AND ANIMESEASON LIKE ?`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESEASON LIKE ?)`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    whereClause += ` AND ANIMESTUDIO LIKE ?`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESTUDIO LIKE ?)`;
     params.push(`%${filters.animestudio}%`);
   }
 
@@ -467,12 +467,12 @@ function getAllSeriesUnpaginated(filters: FilterParams): MediaItem[] {
   }
 
   if (filters.animeseason) {
-    whereClause += ` AND ANIMESEASON LIKE ?`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESEASON LIKE ?)`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    whereClause += ` AND ANIMESTUDIO LIKE ?`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESTUDIO LIKE ?)`;
     params.push(`%${filters.animestudio}%`);
   }
 
@@ -512,6 +512,8 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       MIN(se.SEASONYEAR) as minYear,
       MAX(se.SEASONYEAR) as maxYear,
       GROUP_CONCAT(DISTINCT ep.LANGUAGE) as languages,
+      GROUP_CONCAT(DISTINCT NULLIF(se.ANIMESEASON, '')) as animeSeasons,
+      GROUP_CONCAT(DISTINCT NULLIF(se.ANIMESTUDIO, '')) as animeStudios,
       MAX(ep.ADDDATE) as lastAddDate
     FROM SEASONS se
     LEFT JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
@@ -528,6 +530,8 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
     minYear: number;
     maxYear: number;
     languages: string;
+    animeSeasons: string;
+    animeStudios: string;
     lastAddDate: string;
   }[];
 
@@ -552,6 +556,9 @@ function getSeriesAggregates(seriesIds: number[]): Map<number, SeriesAggregate> 
       totalFilesize: row.totalFilesize || 0,
       yearRange: row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
       languages: Array.from(langSet).sort((a, b) => a - b),
+      // AnimeSeason/AnimeStudio moved from SERIES to SEASONS - aggregate (deduplicated) over all seasons
+      animeSeason: flattenConcatJsonStrings(row.animeSeasons),
+      animeStudio: flattenConcatJsonStrings(row.animeStudios),
       lastAddDate: row.lastAddDate || ''
     });
   }
@@ -565,7 +572,25 @@ interface SeriesAggregate {
   totalFilesize: number;
   yearRange: string;
   languages: number[];
+  animeSeason: string[];
+  animeStudio: string[];
   lastAddDate: string;
+}
+
+/**
+ * Each season's ANIMESEASON/ANIMESTUDIO is a JSON string-array; GROUP_CONCAT joins them with ','.
+ * Wrapping in [] yields a JSON array of arrays, which we flatten and deduplicate.
+ */
+function flattenConcatJsonStrings(concat: string | null): string[] {
+  if (!concat) return [];
+  const set = new Set<string>();
+  try {
+    const nested = JSON.parse(`[${concat}]`) as string[][];
+    for (const arr of nested) for (const v of arr) if (v) set.add(v);
+  } catch {
+    // ignore malformed aggregate
+  }
+  return Array.from(set).sort();
 }
 
 function movieRowToMediaItem(row: MovieRow): MediaItem {
@@ -619,8 +644,8 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate): Medi
     totalLength: aggregate?.totalLength,
     totalFilesize: aggregate?.totalFilesize,
     specialVersion: parseJsonArraySafe(row.SPECIALVERSION),
-    animeSeason: parseJsonArraySafe(row.ANIMESEASON),
-    animeStudio: parseJsonArraySafe(row.ANIMESTUDIO)
+    animeSeason: aggregate ? aggregate.animeSeason : [],
+    animeStudio: aggregate ? aggregate.animeStudio : []
   };
 }
 
@@ -693,7 +718,7 @@ export function getDistinctYears(): number[] {
 export function getDistinctAnimeSeasons(): string[] {
   const db = getDb();
   const movieSeasons = db.prepare("SELECT DISTINCT ANIMESEASON FROM MOVIES WHERE ANIMESEASON IS NOT NULL AND ANIMESEASON != ''").all() as { ANIMESEASON: string }[];
-  const seriesSeasons = db.prepare("SELECT DISTINCT ANIMESEASON FROM SERIES WHERE ANIMESEASON IS NOT NULL AND ANIMESEASON != ''").all() as { ANIMESEASON: string }[];
+  const seriesSeasons = db.prepare("SELECT DISTINCT ANIMESEASON FROM SEASONS WHERE ANIMESEASON IS NOT NULL AND ANIMESEASON != ''").all() as { ANIMESEASON: string }[];
 
   const all = new Set<string>();
   for (const row of [...movieSeasons, ...seriesSeasons]) {
@@ -708,7 +733,7 @@ export function getDistinctAnimeSeasons(): string[] {
 export function getDistinctAnimeStudios(): string[] {
   const db = getDb();
   const movieStudios = db.prepare("SELECT DISTINCT ANIMESTUDIO FROM MOVIES WHERE ANIMESTUDIO IS NOT NULL AND ANIMESTUDIO != ''").all() as { ANIMESTUDIO: string }[];
-  const seriesStudios = db.prepare("SELECT DISTINCT ANIMESTUDIO FROM SERIES WHERE ANIMESTUDIO IS NOT NULL AND ANIMESTUDIO != ''").all() as { ANIMESTUDIO: string }[];
+  const seriesStudios = db.prepare("SELECT DISTINCT ANIMESTUDIO FROM SEASONS WHERE ANIMESTUDIO IS NOT NULL AND ANIMESTUDIO != ''").all() as { ANIMESTUDIO: string }[];
 
   const all = new Set<string>();
   for (const row of [...movieStudios, ...seriesStudios]) {

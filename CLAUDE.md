@@ -29,7 +29,7 @@ ClipCorn Web Panel is a SvelteKit application for browsing a movie/series databa
 
 3. **Groups**: Semicolon-separated strings (e.g., "DC;DCEU"). The GROUPS table has colors for display.
 
-4. **Tags/SpecialVersion/AnimeSeason/AnimeStudio**: JSON arrays stored as strings. Parse with `JSON.parse()`.
+4. **Tags/SpecialVersion/AnimeSeason/AnimeStudio**: JSON arrays stored as strings. Parse with `JSON.parse()`. Note: `AnimeSeason`/`AnimeStudio` live on the `MOVIES` table for movies, but on the `SEASONS` table for series (not `SERIES`) — series-level values are aggregated over all their seasons in `getSeriesAggregates()`.
 
 5. **Viewed History**: Comma-separated format: `"UNSPECIFIED,2017-06-17 21:29:00,2022-02-26 15:51:00"`. The "UNSPECIFIED" value should be filtered out.
 
