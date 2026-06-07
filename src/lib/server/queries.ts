@@ -1,5 +1,8 @@
 import { getDb } from './db';
 import { PAGE_SIZE } from '$lib/constants';
+import type { MediaInfo, Checksums } from '$lib/types';
+
+export type { MediaInfo, Checksums } from '$lib/types';
 
 export interface MovieRow {
   LOCALID: number;
@@ -138,6 +141,9 @@ export interface MediaItem {
   seasonCount?: number;
   totalLength?: number;
   totalFilesize?: number;
+  // Detail-only (populated by getMovie/getEpisode, not in list queries)
+  mediaInfo?: MediaInfo | null;
+  checksums?: Checksums;
 }
 
 export function getMovies(filters: FilterParams, page: number): { items: MediaItem[]; hasMore: boolean; totalCount: number } {
@@ -669,6 +675,64 @@ function parseJsonArraySafe(value: string | null): string[] {
   }
 }
 
+function numOrNull(value: unknown): number | null {
+  return typeof value === 'number' && !Number.isNaN(value) ? value : null;
+}
+
+function codecOrNull(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return String(value);
+}
+
+/** Extract codec/technical info from a row's MEDIAINFO.* columns (SELECT * required). */
+function extractMediaInfo(row: Record<string, unknown>): MediaInfo | null {
+  const mi: MediaInfo = {
+    vcodec: codecOrNull(row['MEDIAINFO.VCODEC']),
+    acodec: codecOrNull(row['MEDIAINFO.ACODEC']),
+    vformat: codecOrNull(row['MEDIAINFO.VFORMAT']),
+    aformat: codecOrNull(row['MEDIAINFO.AFORMAT']),
+    width: numOrNull(row['MEDIAINFO.WIDTH']),
+    height: numOrNull(row['MEDIAINFO.HEIGHT']),
+    framerate: numOrNull(row['MEDIAINFO.FRAMERATE']),
+    duration: numOrNull(row['MEDIAINFO.DURATION']),
+    bitdepth: numOrNull(row['MEDIAINFO.BITDEPTH']),
+    bitrate: numOrNull(row['MEDIAINFO.BITRATE']),
+    framecount: numOrNull(row['MEDIAINFO.FRAMECOUNT']),
+    achannels: numOrNull(row['MEDIAINFO.ACHANNELS']),
+    samplerate: numOrNull(row['MEDIAINFO.SAMPLERATE']),
+    filesize: numOrNull(row['MEDIAINFO.FILESIZE'])
+  };
+  return Object.values(mi).some((v) => v !== null) ? mi : null;
+}
+
+/**
+ * Parse a CHECKSUM_* column. Movies store a JSON array (one entry per part),
+ * episodes store a single bare string. Both normalize to a string[].
+ */
+function parseChecksumField(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+  const s = String(value).trim();
+  if (s === '' || s === '[]') return [];
+  if (s.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(s);
+      return Array.isArray(parsed) ? parsed.map(String).filter((x) => x !== '') : [];
+    } catch {
+      return [];
+    }
+  }
+  return [s];
+}
+
+function extractChecksums(row: Record<string, unknown>): Checksums {
+  return {
+    crc32: parseChecksumField(row['CHECKSUM_CRC32']),
+    md5: parseChecksumField(row['CHECKSUM_MD5']),
+    sha256: parseChecksumField(row['CHECKSUM_SHA256']),
+    sha512: parseChecksumField(row['CHECKSUM_SHA512'])
+  };
+}
+
 export function getCover(id: number): Buffer | null {
   const db = getDb();
   const row = db.prepare('SELECT PREVIEW FROM COVERS WHERE ID = ?').get(id) as { PREVIEW: Buffer } | undefined;
@@ -679,7 +743,74 @@ export function getMovie(id: number): MediaItem | null {
   const db = getDb();
   const row = db.prepare('SELECT * FROM MOVIES WHERE LOCALID = ?').get(id) as MovieRow | undefined;
   if (!row) return null;
-  return movieRowToMediaItem(row);
+  const item = movieRowToMediaItem(row);
+  const raw = row as unknown as Record<string, unknown>;
+  item.mediaInfo = extractMediaInfo(raw);
+  item.checksums = extractChecksums(raw);
+  return item;
+}
+
+export interface EpisodeDetail {
+  id: number;
+  seasonId: number;
+  seriesId: number;
+  seriesName: string;
+  seasonName: string;
+  seasonYear: number;
+  episode: number;
+  name: string;
+  length: number;
+  filesize: number;
+  format: number;
+  addDate: string;
+  languages: number[];
+  tags: number[];
+  score: number;
+  viewedHistory: string;
+  mediaInfo: MediaInfo | null;
+  checksums: Checksums;
+}
+
+export function getEpisode(id: number): EpisodeDetail | null {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT ep.*,
+              se.NAME AS SEASON_NAME,
+              se.SEASONYEAR AS SEASON_YEAR,
+              se.SERIESID AS SERIES_ID,
+              sr.NAME AS SERIES_NAME
+       FROM EPISODES ep
+       JOIN SEASONS se ON se.LOCALID = ep.SEASONID
+       JOIN SERIES sr ON sr.LOCALID = se.SERIESID
+       WHERE ep.LOCALID = ?`
+    )
+    .get(id) as
+    | (EpisodeRow & { SEASON_NAME: string; SEASON_YEAR: number; SERIES_ID: number; SERIES_NAME: string })
+    | undefined;
+  if (!row) return null;
+
+  const raw = row as unknown as Record<string, unknown>;
+  return {
+    id: row.LOCALID,
+    seasonId: row.SEASONID,
+    seriesId: row.SERIES_ID,
+    seriesName: row.SERIES_NAME,
+    seasonName: row.SEASON_NAME,
+    seasonYear: row.SEASON_YEAR,
+    episode: row.EPISODE,
+    name: row.NAME,
+    length: row.LENGTH,
+    filesize: row.FILESIZE,
+    format: row.FORMAT,
+    addDate: row.ADDDATE,
+    languages: parseIntArrayFromJson(row.LANGUAGE),
+    tags: parseIntArrayFromJson(row.TAGS),
+    score: row.SCORE,
+    viewedHistory: row.VIEWED_HISTORY,
+    mediaInfo: extractMediaInfo(raw),
+    checksums: extractChecksums(raw)
+  };
 }
 
 export function getSeriesById(id: number): MediaItem | null {

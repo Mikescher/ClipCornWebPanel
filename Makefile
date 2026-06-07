@@ -6,7 +6,8 @@ NAMESPACE=$(shell git rev-parse --abbrev-ref HEAD)
 HASH=$(shell git rev-parse HEAD)
 
 run:
-	export DATABASE_PATH="/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" && \
+	[ -f "/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" ] && cp "/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db" "/home/mike/Code/private/ClipCorn/ClipCornWebPanel/_run-data/ClipCornDB.db" || true
+	export DATABASE_PATH="/home/mike/Code/private/ClipCorn/ClipCornWebPanel/_run-data/ClipCornDB.db" && \
 	. ${HOME}/.nvm/nvm.sh && nvm use && npm i && npm run dev
 
 setup:

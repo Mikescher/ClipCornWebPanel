@@ -150,6 +150,38 @@ export function parseJsonArray<T>(value: string | null | undefined): T[] {
 }
 
 /**
+ * Format a bitrate (bits per second) in human-readable form
+ */
+export function formatBitrate(bps: number): string {
+  if (!bps) return '';
+  if (bps >= 1_000_000) return (bps / 1_000_000).toFixed(2) + ' Mbit/s';
+  if (bps >= 1000) return Math.round(bps / 1000) + ' kbit/s';
+  return bps + ' bit/s';
+}
+
+/**
+ * Format a duration (in seconds) as H:MM:SS (or M:SS when under an hour)
+ */
+export function formatDuration(seconds: number): string {
+  if (!seconds) return '';
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+/**
+ * Format an audio sample rate (in Hz) in human-readable form
+ */
+export function formatSampleRate(hz: number): string {
+  if (!hz) return '';
+  if (hz >= 1000) return (hz / 1000).toFixed(1).replace(/\.0$/, '') + ' kHz';
+  return hz + ' Hz';
+}
+
+/**
  * Calculate online score as percentage (0-100)
  */
 export function calculateOnlineScore(num: number, denom: number): number {

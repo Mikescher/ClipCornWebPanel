@@ -10,6 +10,8 @@
   import StarsIcon from '$lib/components/icons/StarsIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
   import OnlineRefIcon from '$lib/components/icons/OnlineRefIcon.svelte';
+  import MediaInfoSection from '$lib/components/detail/MediaInfoSection.svelte';
+  import ChecksumsSection from '$lib/components/detail/ChecksumsSection.svelte';
 
   let { data }: { data: PageData } = $props();
   const movie = data.movie;
@@ -94,6 +96,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Media Info -->
+      <MediaInfoSection mediaInfo={movie.mediaInfo} />
 
       <!-- Genres -->
       {#if genreNames.length > 0}
@@ -197,6 +202,9 @@
           </div>
         </div>
       {/if}
+
+      <!-- Checksums -->
+      <ChecksumsSection checksums={movie.checksums} />
 
     </div>
   </div>

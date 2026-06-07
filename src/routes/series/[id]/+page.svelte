@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import type { PageData } from './$types';
   import { GENRES, LANGUAGES, FORMATS, FSK_RATINGS, TAGS } from '$lib/constants';
   import { formatSize, formatLength, formatLengthShort } from '$lib/utils/format';
@@ -241,7 +242,18 @@
             <tbody>
               {#each selectedSeason.episodes as episode}
                 {@const epLanguages = getEpisodeLanguages(episode.LANGUAGE)}
-                <tr>
+                <tr
+                  class="clickable"
+                  role="link"
+                  tabindex="0"
+                  onclick={() => goto(`/episode/${episode.LOCALID}`)}
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      goto(`/episode/${episode.LOCALID}`);
+                    }
+                  }}
+                >
                   <td class="col-ep">{episode.EPISODE}</td>
                   <td class="col-name">{episode.NAME}</td>
                   <td class="col-length">{formatLengthShort(episode.LENGTH)}</td>
@@ -501,6 +513,20 @@
     color: #94a3b8;
     font-size: 0.75rem;
     text-transform: uppercase;
+  }
+
+  .episodes-table tbody tr.clickable {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .episodes-table tbody tr.clickable:hover {
+    background: #232331;
+  }
+
+  .episodes-table tbody tr.clickable:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
   }
 
   .col-ep {
