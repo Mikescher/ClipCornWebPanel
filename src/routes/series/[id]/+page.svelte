@@ -13,6 +13,7 @@
   import ScoreIcon from '$lib/components/icons/ScoreIcon.svelte';
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
   import OnlineRefIcon from '$lib/components/icons/OnlineRefIcon.svelte';
+  import AuthButton from '$lib/components/AuthButton.svelte';
 
   let { data }: { data: PageData } = $props();
   const series = data.series;
@@ -57,6 +58,7 @@
   <header class="header">
     <button type="button" class="back-btn" onclick={() => history.back()}>← Back</button>
     <h1>{series.name}</h1>
+    <AuthButton authenticated={data.authenticated} />
   </header>
 
   <div class="content">
@@ -376,6 +378,8 @@
   }
 
   .header h1 {
+    flex: 1;
+    min-width: 0;
     font-size: 1.1rem;
     font-weight: 600;
     white-space: nowrap;

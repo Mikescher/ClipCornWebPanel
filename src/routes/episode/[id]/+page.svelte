@@ -7,6 +7,7 @@
   import TagIcon from '$lib/components/icons/TagIcon.svelte';
   import MediaInfoSection from '$lib/components/detail/MediaInfoSection.svelte';
   import ChecksumsSection from '$lib/components/detail/ChecksumsSection.svelte';
+  import AuthButton from '$lib/components/AuthButton.svelte';
 
   let { data }: { data: PageData } = $props();
   const episode = data.episode;
@@ -22,6 +23,7 @@
   <header class="header">
     <button type="button" class="back-btn" onclick={() => history.back()}>← Back</button>
     <h1>{episode.name}</h1>
+    <AuthButton authenticated={data.authenticated} />
   </header>
 
   <div class="content">
@@ -172,6 +174,8 @@
   }
 
   .header h1 {
+    flex: 1;
+    min-width: 0;
     font-size: 1.1rem;
     font-weight: 600;
     white-space: nowrap;

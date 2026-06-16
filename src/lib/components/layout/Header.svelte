@@ -2,6 +2,7 @@
   import { filterPanelOpen } from '$lib/stores/ui';
   import { activeFiltersCount, filters } from '$lib/stores/filters';
   import SearchInput from '../filters/SearchInput.svelte';
+  import AuthButton from '../AuthButton.svelte';
 
   let { authenticated = false }: { authenticated?: boolean } = $props();
 
@@ -44,6 +45,8 @@
       <span class="badge">{$activeFiltersCount}</span>
     {/if}
   </button>
+
+  <AuthButton {authenticated} />
 </header>
 
 <style>

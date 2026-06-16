@@ -111,22 +111,22 @@
 {/if}
 
 <style>
+  /* Rendered as the last control inside a flex header; margin-left:auto pins it
+     to the right edge regardless of what precedes it. */
   .eye {
-    position: fixed;
-    top: 1rem;
-    right: 1.25rem;
-    z-index: 200;
+    flex-shrink: 0;
+    margin-left: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     background: transparent;
     border: none;
     border-radius: 8px;
-    color: #475569;
-    opacity: 0.35;
+    color: #64748b;
+    opacity: 0.6;
     cursor: pointer;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
