@@ -20,7 +20,7 @@ export interface MovieRow {
   ONLINESCORE_DENOM: number;
   FSK: number;
   FORMAT: number;
-  MOVIEYEAR: number;
+  MOVIEYEAR: number | null;
   ONLINEREF: string;
   GROUPS: string;
   FILESIZE: number;
@@ -53,7 +53,7 @@ export interface SeasonRow {
   LOCALID: number;
   SERIESID: number;
   NAME: string;
-  SEASONYEAR: number;
+  SEASONYEAR: number | null;
   COVERID: number;
   SCORE: number;
   SCORECOMMENT: string;
@@ -126,7 +126,7 @@ export interface MediaItem {
   onlineScoreDenom: number;
   fsk: number;
   tags: number[];
-  year: number;
+  year: number | null;
   addDate: string;
   onlineRef: string;
   // Movie-specific
@@ -734,8 +734,8 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
     lastWatched: string | null;
     totalLength: number;
     totalFilesize: number;
-    minYear: number;
-    maxYear: number;
+    minYear: number | null;
+    maxYear: number | null;
     languages: string;
     animeSeasons: string;
     animeStudios: string;
@@ -764,7 +764,7 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
       lastWatched: row.lastWatched || undefined,
       totalLength: row.totalLength || 0,
       totalFilesize: row.totalFilesize || 0,
-      yearRange: row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
+      yearRange: row.minYear == null ? '' : row.minYear === row.maxYear ? `${row.minYear}` : `${row.minYear}-${row.maxYear}`,
       languages: Array.from(langSet).sort((a, b) => a - b),
       // AnimeSeason/AnimeStudio moved from SERIES to SEASONS - aggregate (deduplicated) over all seasons
       animeSeason: flattenConcatJsonStrings(row.animeSeasons),
@@ -860,7 +860,7 @@ function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate, authe
     onlineScoreDenom: row.ONLINESCORE_DENOM,
     fsk: row.FSK,
     tags: parseIntArrayFromJson(row.TAGS),
-    year: aggregate ? parseInt(aggregate.yearRange.split('-')[0]) || 0 : 0,
+    year: aggregate && aggregate.yearRange ? parseInt(aggregate.yearRange.split('-')[0]) : null,
     addDate: aggregate?.lastAddDate || '',
     onlineRef: row.ONLINEREF || '',
     episodeCount: aggregate?.episodeCount,
@@ -984,7 +984,7 @@ export interface EpisodeDetail {
   seriesId: number;
   seriesName: string;
   seasonName: string;
-  seasonYear: number;
+  seasonYear: number | null;
   episode: number;
   name: string;
   length: number;
@@ -1015,7 +1015,7 @@ export function getEpisode(id: number): EpisodeDetail | null {
        WHERE ep.LOCALID = ?`
     )
     .get(id) as
-    | (EpisodeRow & { SEASON_NAME: string; SEASON_YEAR: number; SERIES_ID: number; SERIES_NAME: string })
+    | (EpisodeRow & { SEASON_NAME: string; SEASON_YEAR: number | null; SERIES_ID: number; SERIES_NAME: string })
     | undefined;
   if (!row) return null;
 

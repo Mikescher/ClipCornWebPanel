@@ -251,7 +251,7 @@
             </span>
             <span class="season-label">
               {season.NAME || `Season ${i + 1}`}
-              <span class="year">({season.SEASONYEAR})</span>
+              {#if season.SEASONYEAR}<span class="year">({season.SEASONYEAR})</span>{/if}
             </span>
           </button>
         {/each}
