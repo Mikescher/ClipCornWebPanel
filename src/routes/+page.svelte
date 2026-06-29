@@ -118,7 +118,7 @@
 
 <Header authenticated={data.authenticated} />
 
-<FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} authenticated={data.authenticated} />
+<FilterPanel groups={data.groups} years={data.years} animeSeasons={data.animeSeasons} animeStudios={data.animeStudios} versions={data.versions} stats={data.stats} authenticated={data.authenticated} />
 
 <ActiveFilters />
 

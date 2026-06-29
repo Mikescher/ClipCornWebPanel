@@ -2,7 +2,8 @@
   import { filterPanelOpen } from '$lib/stores/ui';
   import { filters, defaultFilters, activeFiltersCount } from '$lib/stores/filters';
   import { LANGUAGES, FSK_RATINGS, FORMATS, TAGS, SCORES, GENRES } from '$lib/constants';
-  import type { GroupRow } from '$lib/server/queries';
+  import { formatSize, formatLength } from '$lib/utils/format';
+  import type { GroupRow, DbStats } from '$lib/server/queries';
 
   let {
     groups,
@@ -10,6 +11,7 @@
     animeSeasons,
     animeStudios,
     versions,
+    stats,
     authenticated = false
   }: {
     groups: GroupRow[];
@@ -17,8 +19,54 @@
     animeSeasons: string[];
     animeStudios: string[];
     versions: string[];
+    stats: DbStats;
     authenticated?: boolean;
   } = $props();
+
+  const num = (n: number) => n.toLocaleString('en-US');
+
+  // Render the UTC ISO timestamps in Berlin local time. An explicit timeZone makes the output
+  // identical on the server and client regardless of the host's TZ (so no hydration mismatch),
+  // and reconstructing from formatToParts avoids any locale-dependent ordering. h23 keeps the
+  // hour as 00-23 (some ICU versions render midnight as "24" with hour12:false).
+  function berlinParts(iso: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Berlin',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(new Date(iso));
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+    return { y: get('year'), mo: get('month'), d: get('day'), h: get('hour'), mi: get('minute') };
+  }
+  const fmtDay = (iso: string) => {
+    if (!iso) return '—';
+    const p = berlinParts(iso);
+    return `${p.y}-${p.mo}-${p.d}`;
+  };
+  const fmtDateTime = (iso: string) => {
+    if (!iso) return '—';
+    const p = berlinParts(iso);
+    return `${p.y}-${p.mo}-${p.d} ${p.h}:${p.mi}`;
+  };
+
+  const totalTitles = $derived(stats.movies + stats.series);
+  const totalSize = $derived(stats.movieSize + stats.seriesSize);
+  const totalLength = $derived(stats.movieLength + stats.seriesLength);
+
+  // Tooltip bodies, one string per line.
+  const dataLines = $derived([`Created: ${fmtDateTime(stats.dbCreated)}`, `Modified: ${fmtDateTime(stats.dbModified)}`]);
+  const titleLines = $derived([
+    `${num(stats.movies)} movies`,
+    `${num(stats.series)} series`,
+    `${num(stats.seasons)} seasons`,
+    `${num(stats.episodes)} episodes`
+  ]);
+  const sizeLines = $derived([`Movies: ${formatSize(stats.movieSize)}`, `Series: ${formatSize(stats.seriesSize)}`]);
+  const lengthLines = $derived([`Movies: ${formatLength(stats.movieLength)}`, `Series: ${formatLength(stats.seriesLength)}`]);
 
   function clearFilters() {
     filters.set({ ...defaultFilters });
@@ -219,6 +267,22 @@
       </div>
     {/if}
   </div>
+
+  {#snippet stat(value: string, lines: string[])}
+    <div class="stat">
+      <span class="stat-value">{value}</span>
+      <span class="tooltip" role="tooltip">
+        {#each lines as line}<span>{line}</span>{/each}
+      </span>
+    </div>
+  {/snippet}
+
+  <footer class="panel-footer">
+    {@render stat(fmtDay(stats.dbModified), dataLines)}
+    {@render stat(`${num(totalTitles)} entries`, titleLines)}
+    {@render stat(formatSize(totalSize), sizeLines)}
+    {@render stat(formatLength(totalLength), lengthLines)}
+  </footer>
 </div>
 
 <style>
@@ -295,11 +359,69 @@
   }
 
   .panel-content {
+    /* flex:1 + min-height:0 lets this region fill the sidebar and scroll, pinning the footer to the bottom */
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .panel-footer {
+    flex-shrink: 0;
+    padding: 0.625rem 1rem;
+    border-top: 1px solid #2a2a3a;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  .stat {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    cursor: default;
+  }
+
+  /* Muted via colour (not container opacity) so the tooltip below stays fully opaque. */
+  .stat-value {
+    color: rgba(241, 245, 249, 0.5);
+    text-align: right;
+  }
+
+  .stat:hover .stat-value {
+    color: rgba(241, 245, 249, 0.85);
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    white-space: nowrap;
+    padding: 0.4rem 0.6rem;
+    background: #2a2a3a;
+    border: 1px solid #363648;
+    border-radius: 6px;
+    color: #f1f5f9;
+    text-align: right;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 200;
+  }
+
+  .stat:hover .tooltip {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .filter-group h3 {

@@ -1,4 +1,4 @@
-import { getDb } from './db';
+import { getDb, getDbFileInfo } from './db';
 import { PAGE_SIZE } from '$lib/constants';
 import { parseViewedHistory } from '$lib/utils/format';
 import type { MediaInfo, Checksums } from '$lib/types';
@@ -1123,11 +1123,42 @@ export function getDistinctVersions(): string[] {
   return Array.from(all).sort();
 }
 
-export function getStats(): { movies: number; series: number; seasons: number; episodes: number } {
+export interface DbStats {
+  movies: number;
+  series: number;
+  seasons: number;
+  episodes: number;
+  // Size (bytes) and length (minutes) split by media type. Series totals come from their episodes.
+  movieSize: number;
+  seriesSize: number;
+  movieLength: number;
+  seriesLength: number;
+  // ISO timestamps of the database file itself, so the UI can show how old the data is.
+  dbCreated: string;
+  dbModified: string;
+}
+
+export function getStats(): DbStats {
   const db = getDb();
-  const movies = (db.prepare('SELECT COUNT(*) as count FROM MOVIES').get() as { count: number }).count;
+  const movies = db
+    .prepare('SELECT COUNT(*) as count, COALESCE(SUM(FILESIZE), 0) as size, COALESCE(SUM(LENGTH), 0) as length FROM MOVIES')
+    .get() as { count: number; size: number; length: number };
   const series = (db.prepare('SELECT COUNT(*) as count FROM SERIES').get() as { count: number }).count;
   const seasons = (db.prepare('SELECT COUNT(*) as count FROM SEASONS').get() as { count: number }).count;
-  const episodes = (db.prepare('SELECT COUNT(*) as count FROM EPISODES').get() as { count: number }).count;
-  return { movies, series, seasons, episodes };
+  const episodes = db
+    .prepare('SELECT COUNT(*) as count, COALESCE(SUM(FILESIZE), 0) as size, COALESCE(SUM(LENGTH), 0) as length FROM EPISODES')
+    .get() as { count: number; size: number; length: number };
+  const file = getDbFileInfo();
+  return {
+    movies: movies.count,
+    series,
+    seasons,
+    episodes: episodes.count,
+    movieSize: movies.size,
+    seriesSize: episodes.size,
+    movieLength: movies.length,
+    seriesLength: episodes.length,
+    dbCreated: file.created,
+    dbModified: file.modified
+  };
 }

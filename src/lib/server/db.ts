@@ -84,6 +84,15 @@ export function getDb(): Database.Database {
   return db;
 }
 
+/** Filesystem timestamps of the database file, so the UI can show how old the data is. */
+export function getDbFileInfo(): { created: string; modified: string } {
+  const stat = statSync(DATABASE_PATH);
+  // birthtime is the creation date where the filesystem records it; some filesystems leave it
+  // unset (epoch 0), in which case ctime (inode change time) is the best available fallback.
+  const created = stat.birthtimeMs > 0 ? stat.birthtime : stat.ctime;
+  return { created: created.toISOString(), modified: stat.mtime.toISOString() };
+}
+
 export function closeDb(): void {
   if (db) {
     db.close();
