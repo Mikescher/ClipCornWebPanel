@@ -1,10 +1,14 @@
 import Database from 'better-sqlite3';
 import { env } from '$env/dynamic/private';
-import { statSync } from 'fs';
+import { existsSync, statSync } from 'fs';
+import { dirname, join } from 'path';
 import { performance } from 'node:perf_hooks';
 import { color } from './logcolor';
 
 const DATABASE_PATH = env.DATABASE_PATH ?? '/data/ClipCornDB.db';
+// The per-user half of the split database (ratings, comments, tags, watch history). It is never
+// synced, so a panel fed only the shared file legitimately runs without it.
+const USERDATA_PATH = env.USERDATA_PATH ?? join(dirname(DATABASE_PATH), 'ClipCornUserData.db');
 
 // SQL query logging is on unless LOG_SQL is explicitly set to "false"/"0".
 const LOG_SQL = env.LOG_SQL !== 'false' && env.LOG_SQL !== '0';
@@ -12,6 +16,9 @@ const LOG_SQL = env.LOG_SQL !== 'false' && env.LOG_SQL !== '0';
 let db: Database.Database | null = null;
 let lastMtime: number | null = null;
 let lastSize: number | null = null;
+let lastUserMtime: number | null = null;
+let lastUserSize: number | null = null;
+let userDataAttached = false;
 
 let querySeq = 0;
 
@@ -67,21 +74,42 @@ function instrument(database: Database.Database): Database.Database {
 
 export function getDb(): Database.Database {
   const stat = statSync(DATABASE_PATH);
+  const userStat = existsSync(USERDATA_PATH) ? statSync(USERDATA_PATH) : null;
 
-  if (db && (lastMtime !== stat.mtimeMs || lastSize !== stat.size)) {
-    // Database file changed, close old connection
+  const mainChanged = lastMtime !== stat.mtimeMs || lastSize !== stat.size;
+  const userChanged = lastUserMtime !== (userStat?.mtimeMs ?? null) || lastUserSize !== (userStat?.size ?? null);
+
+  if (db && (mainChanged || userChanged)) {
+    // One of the database files changed, close old connection
     db.close();
     db = null;
   }
 
   if (!db) {
     const raw = new Database(DATABASE_PATH, { readonly: true, fileMustExist: true });
+    // An attached database inherits the read-only flag of the main connection.
+    if (userStat) raw.prepare('ATTACH DATABASE ? AS userdata').run(USERDATA_PATH);
+    userDataAttached = userStat !== null;
     db = LOG_SQL ? instrument(raw) : raw;
     lastMtime = stat.mtimeMs;
     lastSize = stat.size;
+    lastUserMtime = userStat?.mtimeMs ?? null;
+    lastUserSize = userStat?.size ?? null;
   }
 
   return db;
+}
+
+/**
+ * Whether the per-user database is present. When it is not, every user column falls back to its
+ * default (see `udJoin` in queries.ts) instead of the panel failing.
+ *
+ * Deliberately does not re-check the files: this is called while a query is being built, and
+ * reopening the connection there would invalidate the handle the caller is holding.
+ */
+export function hasUserData(): boolean {
+  if (!db) getDb();
+  return userDataAttached;
 }
 
 /** Filesystem timestamps of the database file, so the UI can show how old the data is. */
@@ -99,5 +127,8 @@ export function closeDb(): void {
     db = null;
     lastMtime = null;
     lastSize = null;
+    lastUserMtime = null;
+    lastUserSize = null;
+    userDataAttached = false;
   }
 }

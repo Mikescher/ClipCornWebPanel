@@ -2,14 +2,14 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getMovie } from '$lib/server/queries';
 import { parseViewedHistory } from '$lib/utils/format';
+import { isValidId } from '$lib/utils/id';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-  const id = parseInt(params.id);
-  if (isNaN(id)) {
+  if (!isValidId(params.id)) {
     throw error(400, 'Invalid movie ID');
   }
 
-  const movie = getMovie(id);
+  const movie = getMovie(params.id);
   if (!movie) {
     throw error(404, 'Movie not found');
   }

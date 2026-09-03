@@ -295,11 +295,11 @@
                   class="clickable"
                   role="link"
                   tabindex="0"
-                  onclick={() => goto(`/episode/${episode.LOCALID}`)}
+                  onclick={() => goto(`/episode/${episode.ID}`)}
                   onkeydown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      goto(`/episode/${episode.LOCALID}`);
+                      goto(`/episode/${episode.ID}`);
                     }
                   }}
                 >
@@ -307,7 +307,7 @@
                   {#if data.authenticated}
                     <td class="col-viewed">
                       {#if isEpisodeWatched(episode.VIEWED_HISTORY)}
-                        <WatchedEye badge={false} size={15} idSuffix={`ep${episode.LOCALID}`} />
+                        <WatchedEye badge={false} size={15} idSuffix={`ep${episode.ID}`} />
                       {/if}
                     </td>
                   {/if}

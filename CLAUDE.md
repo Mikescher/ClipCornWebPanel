@@ -21,6 +21,35 @@ ClipCorn Web Panel is a SvelteKit application for browsing a movie/series databa
 - All queries in `src/lib/server/queries.ts`
 - Path configured via `DATABASE_PATH` environment variable
 
+### Split database (main + userdata)
+The database comes in two files. `ClipCornDB.db` (`main`) is the shared, objective part;
+`ClipCornUserData.db` (`userdata`, path via `USERDATA_PATH`, default: sibling of `DATABASE_PATH`)
+holds everything personal and is `ATTACH`ed to the same read-only connection.
+
+| userdata table | columns |
+|---|---|
+| `MOVIES`, `EPISODES` | `VIEWED_HISTORY`, `TAGS`, `SCORE`, `SCORECOMMENT` |
+| `SERIES` | `TAGS`, `SCORE`, `SCORECOMMENT` |
+| `SEASONS` | `SCORE`, `SCORECOMMENT` |
+
+The user file is **sparse**: an element at all-default values has no row there. Every read must
+therefore `LEFT JOIN` it and `COALESCE` to the default (`'[]'` / `'[]'` / `6` = unrated / `''`).
+`queries.ts` has the helpers for this - `udJoin()`, `ud()` and `udColumns()`; use them instead of
+naming a user column directly, and alias the joined relation `ud` (`epud` for a nested episode
+join). `udColumns()` re-exposes the user columns under their old names, so joined rows keep the
+shape the mappers expect.
+
+`hasUserData()` reports whether the file exists at all - it is never synced, so a panel may only
+have the shared half. When it is missing the join falls back to an empty stand-in relation
+(`UD_ABSENT`) and everything reads as default rather than failing.
+
+### Element ids are UUIDs
+The primary key column is `ID` (a lowercase 36-char UUIDv7 string), not `LOCALID`; `SERIESID`,
+`SEASONID` and `COVERID` are UUIDs too, and the nil UUID replaces the old `-1` "no cover"
+sentinel. Route params are validated with `isValidId()` from `$lib/utils/id.ts` instead of
+`parseInt`. UUIDv7 sorts lexicographically by creation time, so `ORDER BY ID` still means
+"insertion order" - but `ID` is ambiguous in a joined query and has to be table-qualified.
+
 ### Data Formats
 
 1. **Genre/Language**: Stored as bitmasks. Use `getBits()` or `getLanguagesFromBitmask()` to extract individual values.
@@ -29,7 +58,7 @@ ClipCorn Web Panel is a SvelteKit application for browsing a movie/series databa
 
 3. **Groups**: Semicolon-separated strings (e.g., "DC;DCEU"). The GROUPS table has colors for display.
 
-4. **Tags/SpecialVersion/AnimeSeason/AnimeStudio**: JSON arrays stored as strings. Parse with `JSON.parse()`. Note: `AnimeSeason`/`AnimeStudio` live on the `MOVIES` table for movies, but on the `SEASONS` table for series (not `SERIES`) — series-level values are aggregated over all their seasons in `getSeriesAggregates()`.
+4. **Tags/SpecialVersion/AnimeSeason/AnimeStudio**: JSON arrays stored as strings. Parse with `JSON.parse()`. Note: `AnimeSeason`/`AnimeStudio` live on the `MOVIES` table for movies, but on the `SEASONS` table for series (not `SERIES`) — series-level values are aggregated over all their seasons in `getSeriesAggregates()`. `Tags` lives in the userdata database.
 
 5. **Viewed History**: Comma-separated format: `"UNSPECIFIED,2017-06-17 21:29:00,2022-02-26 15:51:00"`. The "UNSPECIFIED" value should be filtered out.
 
@@ -76,7 +105,9 @@ ClipCorn Web Panel is a SvelteKit application for browsing a movie/series databa
 ### Adding a new filter
 1. Add to `FilterState` interface in `src/lib/stores/filters.ts`
 2. Add to `defaultFilters`, `filtersToParams()`, `paramsToFilters()`
-3. Add query condition in `src/lib/server/queries.ts` (getMovies/getSeries)
+3. Add query condition in `src/lib/server/queries.ts` — in **all four** list queries
+   (`getMovies`/`getSeries` and their `getAll*Unpaginated` twins); a condition on a user column
+   goes through `ud('SCORE')` etc., never the bare column name
 4. Add UI control in `src/lib/components/filters/FilterPanel.svelte`
 
 ### Adding a new data mapping
@@ -102,7 +133,9 @@ npm run check    # TypeScript/Svelte check
 
 Default test database path: `/home/mike/temp/jcc-prodcopy/ClipCornDB/ClipCornDB.db`
 
-Override with: `DATABASE_PATH=/path/to/db npm run dev`
+Override with: `DATABASE_PATH=/path/to/ClipCornDB.db npm run dev`. `ClipCornUserData.db` is picked
+up from the same directory unless `USERDATA_PATH` says otherwise; without it the panel still runs,
+with every rating, tag and watch entry at its default.
 
 ## Authentication
 
@@ -115,7 +148,7 @@ Override with: `DATABASE_PATH=/path/to/db npm run dev`
 
 ## Important Notes
 
-- Database is **read-only** - never write to it
+- Database is **read-only** - never write to it (both files)
 - Use Svelte 5 runes syntax (`$state`, `$derived`, `$effect`, `$props`)
 - SSR data loading in `+page.server.ts` files
 - Cover images cached for 24 hours (Cache-Control header)

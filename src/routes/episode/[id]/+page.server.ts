@@ -2,14 +2,14 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getEpisode } from '$lib/server/queries';
 import { parseViewedHistory } from '$lib/utils/format';
+import { isValidId } from '$lib/utils/id';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-  const id = parseInt(params.id);
-  if (isNaN(id)) {
+  if (!isValidId(params.id)) {
     throw error(400, 'Invalid episode ID');
   }
 
-  const episode = getEpisode(id);
+  const episode = getEpisode(params.id);
   if (!episode) {
     throw error(404, 'Episode not found');
   }

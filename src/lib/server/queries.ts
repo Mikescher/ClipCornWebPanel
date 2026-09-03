@@ -1,4 +1,4 @@
-import { getDb, getDbFileInfo } from './db';
+import { getDb, getDbFileInfo, hasUserData } from './db';
 import { PAGE_SIZE } from '$lib/constants';
 import { parseViewedHistory } from '$lib/utils/format';
 import type { MediaInfo, Checksums } from '$lib/types';
@@ -6,7 +6,7 @@ import type { MediaInfo, Checksums } from '$lib/types';
 export type { MediaInfo, Checksums } from '$lib/types';
 
 export interface MovieRow {
-  LOCALID: number;
+  ID: string;
   NAME: string;
   VIEWED_HISTORY: string;
   ZYKLUS: string;
@@ -26,7 +26,7 @@ export interface MovieRow {
   FILESIZE: number;
   SCORE: number;
   SCORECOMMENT: string;
-  COVERID: number;
+  COVERID: string;
   SPECIALVERSION: string | null;
   ANIMESEASON: string | null;
   ANIMESTUDIO: string | null;
@@ -34,7 +34,7 @@ export interface MovieRow {
 }
 
 export interface SeriesRow {
-  LOCALID: number;
+  ID: string;
   NAME: string;
   GENRE: string;
   ONLINESCORE_NUM: number;
@@ -44,17 +44,17 @@ export interface SeriesRow {
   GROUPS: string;
   SCORE: number;
   SCORECOMMENT: string;
-  COVERID: number;
+  COVERID: string;
   SPECIALVERSION: string | null;
   TAGS: string | null;
 }
 
 export interface SeasonRow {
-  LOCALID: number;
-  SERIESID: number;
+  ID: string;
+  SERIESID: string;
   NAME: string;
   SEASONYEAR: number | null;
-  COVERID: number;
+  COVERID: string;
   SCORE: number;
   SCORECOMMENT: string;
   ONLINEREF: string;
@@ -63,8 +63,8 @@ export interface SeasonRow {
 }
 
 export interface EpisodeRow {
-  LOCALID: number;
-  SEASONID: number;
+  ID: string;
+  SEASONID: string;
   EPISODE: number;
   NAME: string;
   VIEWED_HISTORY: string;
@@ -90,7 +90,7 @@ export interface GroupRow {
 }
 
 export interface CoverRow {
-  ID: number;
+  ID: string;
   PREVIEW: Buffer;
 }
 
@@ -114,10 +114,10 @@ export interface FilterParams {
 }
 
 export interface MediaItem {
-  id: number;
+  id: string;
   type: 'movie' | 'series';
   name: string;
-  coverId: number;
+  coverId: string;
   genres: number[];
   groups: string[];
   languages: number[];
@@ -157,19 +157,71 @@ export interface MediaItem {
   lastWatched?: string;
 }
 
+// --- Split database (ClipCornDB.db + ClipCornUserData.db) ---
+// Ratings, comments, tags and watch history live in the per-user file, keyed by the same UUID as
+// the main row. Every read LEFT JOINs it and treats a missing row as "all defaults".
+
+const UD_DEFAULT = {
+  VIEWED_HISTORY: "'[]'",
+  TAGS: "'[]'",
+  SCORE: '6', // CCUserScore.RATING_NO
+  SCORECOMMENT: "''"
+} as const;
+
+type UdColumn = keyof typeof UD_DEFAULT;
+type UdTable = 'MOVIES' | 'SERIES' | 'SEASONS' | 'EPISODES';
+
+const UD_COLUMNS: Record<UdTable, UdColumn[]> = {
+  MOVIES: ['VIEWED_HISTORY', 'TAGS', 'SCORE', 'SCORECOMMENT'],
+  SERIES: ['TAGS', 'SCORE', 'SCORECOMMENT'],
+  SEASONS: ['SCORE', 'SCORECOMMENT'],
+  EPISODES: ['VIEWED_HISTORY', 'TAGS', 'SCORE', 'SCORECOMMENT']
+};
+
+// Stands in for an absent ClipCornUserData.db: an empty relation of the right shape, so the joined
+// queries stay valid and every user column falls through to its default.
+const UD_ABSENT = `(SELECT NULL AS ID, NULL AS VIEWED_HISTORY, NULL AS TAGS, NULL AS SCORE, NULL AS SCORECOMMENT WHERE 0)`;
+
+/** `LEFT JOIN` the user-data counterpart of a main table. */
+function udJoin(table: UdTable, mainAlias: string, alias = 'ud'): string {
+  return `LEFT JOIN ${hasUserData() ? `userdata.${table}` : UD_ABSENT} ${alias} ON ${alias}.ID = ${mainAlias}.ID`;
+}
+
+/** A user column, defaulted for elements without a user-data row. */
+function ud(column: UdColumn, alias = 'ud'): string {
+  return `COALESCE(${alias}.${column}, ${UD_DEFAULT[column]})`;
+}
+
+/** The user columns of a table, named so a joined row keeps its pre-split shape. */
+function udColumns(table: UdTable, alias = 'ud'): string {
+  return UD_COLUMNS[table].map((c) => `${ud(c, alias)} AS ${c}`).join(', ');
+}
+
 // Watched = at least one VIEWED_HISTORY entry that isn't the 'UNSPECIFIED' placeholder.
 // json_valid guards against empty/malformed JSON (json_each would otherwise throw).
-const MOVIE_WATCHED = `EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
-const SERIES_TOTAL_EP = `(SELECT COUNT(*) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
-const SERIES_WATCHED_EP = `(SELECT COUNT(*) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> ''))`;
+function watched(history: string): string {
+  return `EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+}
+
+/** The episodes of the correlated SERIES row, joined to their user data as `epud`. */
+function seriesEpisodesFrom(): string {
+  return `FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.ID ${udJoin('EPISODES', 'ep', 'epud')}`;
+}
+
+const SERIES_TOTAL_EP = `(SELECT COUNT(*) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.ID WHERE se.SERIESID = SERIES.ID)`;
+
+function seriesWatchedEp(): string {
+  return `(SELECT COUNT(*) ${seriesEpisodesFrom()} WHERE se.SERIESID = SERIES.ID AND ${watched(ud('VIEWED_HISTORY', 'epud'))})`;
+}
 
 /** SQL fragment for the movie `viewed` filter. Movies are binary, so 'partial' matches nothing. */
 function movieViewedClause(viewed?: string): string {
+  const isWatched = watched(ud('VIEWED_HISTORY'));
   switch (viewed) {
     case 'full':
-      return ` AND ${MOVIE_WATCHED}`;
+      return ` AND ${isWatched}`;
     case 'none':
-      return ` AND NOT ${MOVIE_WATCHED}`;
+      return ` AND NOT ${isWatched}`;
     case 'partial':
       return ` AND 1=0`;
     default:
@@ -179,13 +231,14 @@ function movieViewedClause(viewed?: string): string {
 
 /** SQL fragment for the series `viewed` filter, comparing watched episodes to total episodes. */
 function seriesViewedClause(viewed?: string): string {
+  const watchedEp = seriesWatchedEp();
   switch (viewed) {
     case 'full':
-      return ` AND ${SERIES_TOTAL_EP} > 0 AND ${SERIES_WATCHED_EP} = ${SERIES_TOTAL_EP}`;
+      return ` AND ${SERIES_TOTAL_EP} > 0 AND ${watchedEp} = ${SERIES_TOTAL_EP}`;
     case 'partial':
-      return ` AND ${SERIES_WATCHED_EP} > 0 AND ${SERIES_WATCHED_EP} < ${SERIES_TOTAL_EP}`;
+      return ` AND ${watchedEp} > 0 AND ${watchedEp} < ${SERIES_TOTAL_EP}`;
     case 'none':
-      return ` AND ${SERIES_WATCHED_EP} = 0`;
+      return ` AND ${watchedEp} = 0`;
     default:
       return '';
   }
@@ -193,82 +246,98 @@ function seriesViewedClause(viewed?: string): string {
 
 // --- Sorting ---
 // Watch timestamps stored as "YYYY-MM-DD HH:MM:SS" sort lexically = chronologically.
-const MOVIE_FIRST_WATCHED = `(SELECT MIN(je.value) FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
-const MOVIE_LAST_WATCHED = `(SELECT MAX(je.value) FROM json_each(CASE WHEN json_valid(VIEWED_HISTORY) THEN VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+function movieWatchExtreme(fn: 'MIN' | 'MAX'): string {
+  const history = ud('VIEWED_HISTORY');
+  return `(SELECT ${fn}(je.value) FROM json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+}
+
+function seriesWatchExtreme(fn: 'MIN' | 'MAX'): string {
+  const history = ud('VIEWED_HISTORY', 'epud');
+  return `(SELECT ${fn}(je.value) ${seriesEpisodesFrom()}, json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE se.SERIESID = SERIES.ID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+}
+
 // COALESCE to -1 so unrated items sort below any real score (first in ASC, last in DESC).
 const MOVIE_ONLINE = `COALESCE(CAST(ONLINESCORE_NUM AS REAL) / NULLIF(ONLINESCORE_DENOM, 0), -1)`;
 
-const SERIES_LAST_ADD = `(SELECT MAX(ep.ADDDATE) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
-const SERIES_FIRST_WATCHED = `(SELECT MIN(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
-const SERIES_LAST_WATCHED = `(SELECT MAX(je.value) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID, json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE se.SERIESID = SERIES.LOCALID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+const SERIES_LAST_ADD = `(SELECT MAX(ep.ADDDATE) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.ID WHERE se.SERIESID = SERIES.ID)`;
 const SERIES_ONLINE = `COALESCE(CAST(ONLINESCORE_NUM AS REAL) / NULLIF(ONLINESCORE_DENOM, 0), -1)`;
-const SERIES_SIZE = `(SELECT COALESCE(SUM(ep.FILESIZE), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
-const SERIES_LENGTH = `(SELECT COALESCE(SUM(ep.LENGTH), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.LOCALID WHERE se.SERIESID = SERIES.LOCALID)`;
+const SERIES_SIZE = `(SELECT COALESCE(SUM(ep.FILESIZE), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.ID WHERE se.SERIESID = SERIES.ID)`;
+const SERIES_LENGTH = `(SELECT COALESCE(SUM(ep.LENGTH), 0) FROM SEASONS se JOIN EPISODES ep ON ep.SEASONID = se.ID WHERE se.SERIESID = SERIES.ID)`;
 
-const TIEBREAK = `, NAME COLLATE NOCASE ASC, LOCALID ASC`;
-const NAME_ORDER = `ORDER BY NAME COLLATE NOCASE ASC, LOCALID ASC`;
+// ID has to be qualified everywhere: the joined user-data relation carries one too.
+function tiebreak(table: 'MOVIES' | 'SERIES'): string {
+  return `, NAME COLLATE NOCASE ASC, ${table}.ID ASC`;
+}
+
+function nameOrder(table: 'MOVIES' | 'SERIES'): string {
+  return `ORDER BY NAME COLLATE NOCASE ASC, ${table}.ID ASC`;
+}
 
 /** Build the `ORDER BY ...` clause for the paginated movie query. */
 function movieOrderBy(sort: string | undefined, authenticated: boolean): string {
+  const tb = tiebreak('MOVIES');
+  const byAddDate = `ORDER BY ADDDATE DESC${tb}`;
   switch (sort) {
     case 'name':
-      return NAME_ORDER;
+      return nameOrder('MOVIES');
     case 'added':
-      return `ORDER BY ADDDATE DESC${TIEBREAK}`;
+      return byAddDate;
     case 'first_watched':
-      return authenticated ? `ORDER BY ${MOVIE_FIRST_WATCHED} DESC${TIEBREAK}` : `ORDER BY ADDDATE DESC${TIEBREAK}`;
+      return authenticated ? `ORDER BY ${movieWatchExtreme('MIN')} DESC${tb}` : byAddDate;
     case 'last_watched':
-      return authenticated ? `ORDER BY ${MOVIE_LAST_WATCHED} DESC${TIEBREAK}` : `ORDER BY ADDDATE DESC${TIEBREAK}`;
+      return authenticated ? `ORDER BY ${movieWatchExtreme('MAX')} DESC${tb}` : byAddDate;
     case 'online_asc':
-      return `ORDER BY ${MOVIE_ONLINE} ASC${TIEBREAK}`;
+      return `ORDER BY ${MOVIE_ONLINE} ASC${tb}`;
     case 'online_desc':
-      return `ORDER BY ${MOVIE_ONLINE} DESC${TIEBREAK}`;
+      return `ORDER BY ${MOVIE_ONLINE} DESC${tb}`;
     case 'user_asc':
-      return `ORDER BY SCORE ASC${TIEBREAK}`;
+      return `ORDER BY ${ud('SCORE')} ASC${tb}`;
     case 'user_desc':
-      return `ORDER BY SCORE DESC${TIEBREAK}`;
+      return `ORDER BY ${ud('SCORE')} DESC${tb}`;
     case 'size_asc':
-      return `ORDER BY FILESIZE ASC${TIEBREAK}`;
+      return `ORDER BY FILESIZE ASC${tb}`;
     case 'size_desc':
-      return `ORDER BY FILESIZE DESC${TIEBREAK}`;
+      return `ORDER BY FILESIZE DESC${tb}`;
     case 'duration_asc':
-      return `ORDER BY LENGTH ASC${TIEBREAK}`;
+      return `ORDER BY LENGTH ASC${tb}`;
     case 'duration_desc':
-      return `ORDER BY LENGTH DESC${TIEBREAK}`;
+      return `ORDER BY LENGTH DESC${tb}`;
     default:
-      return `ORDER BY ADDDATE DESC${TIEBREAK}`;
+      return byAddDate;
   }
 }
 
 /** Build the `ORDER BY ...` clause for the paginated series query. */
 function seriesOrderBy(sort: string | undefined, authenticated: boolean): string {
+  const tb = tiebreak('SERIES');
+  const byName = nameOrder('SERIES');
   switch (sort) {
     case 'name':
-      return NAME_ORDER;
+      return byName;
     case 'added':
-      return `ORDER BY ${SERIES_LAST_ADD} DESC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_LAST_ADD} DESC${tb}`;
     case 'first_watched':
-      return authenticated ? `ORDER BY ${SERIES_FIRST_WATCHED} DESC${TIEBREAK}` : NAME_ORDER;
+      return authenticated ? `ORDER BY ${seriesWatchExtreme('MIN')} DESC${tb}` : byName;
     case 'last_watched':
-      return authenticated ? `ORDER BY ${SERIES_LAST_WATCHED} DESC${TIEBREAK}` : NAME_ORDER;
+      return authenticated ? `ORDER BY ${seriesWatchExtreme('MAX')} DESC${tb}` : byName;
     case 'online_asc':
-      return `ORDER BY ${SERIES_ONLINE} ASC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_ONLINE} ASC${tb}`;
     case 'online_desc':
-      return `ORDER BY ${SERIES_ONLINE} DESC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_ONLINE} DESC${tb}`;
     case 'user_asc':
-      return `ORDER BY SCORE ASC${TIEBREAK}`;
+      return `ORDER BY ${ud('SCORE')} ASC${tb}`;
     case 'user_desc':
-      return `ORDER BY SCORE DESC${TIEBREAK}`;
+      return `ORDER BY ${ud('SCORE')} DESC${tb}`;
     case 'size_asc':
-      return `ORDER BY ${SERIES_SIZE} ASC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_SIZE} ASC${tb}`;
     case 'size_desc':
-      return `ORDER BY ${SERIES_SIZE} DESC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_SIZE} DESC${tb}`;
     case 'duration_asc':
-      return `ORDER BY ${SERIES_LENGTH} ASC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_LENGTH} ASC${tb}`;
     case 'duration_desc':
-      return `ORDER BY ${SERIES_LENGTH} DESC${TIEBREAK}`;
+      return `ORDER BY ${SERIES_LENGTH} DESC${tb}`;
     default:
-      return NAME_ORDER;
+      return byName;
   }
 }
 
@@ -349,7 +418,7 @@ export function getMovies(filters: FilterParams, page: number, authenticated = f
   }
 
   if (filters.score !== undefined) {
-    whereClause += ` AND SCORE = ?`;
+    whereClause += ` AND ${ud('SCORE')} = ?`;
     params.push(filters.score);
   }
 
@@ -379,7 +448,7 @@ export function getMovies(filters: FilterParams, page: number, authenticated = f
   }
 
   if (filters.tags !== undefined) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(${ud('TAGS')}) WHERE value = ?)`;
     params.push(filters.tags);
   }
 
@@ -387,12 +456,14 @@ export function getMovies(filters: FilterParams, page: number, authenticated = f
     whereClause += movieViewedClause(filters.viewed);
   }
 
+  const from = `FROM MOVIES ${udJoin('MOVIES', 'MOVIES')}`;
+
   // Get total count
-  const countQuery = `SELECT COUNT(*) as count FROM MOVIES ${whereClause}`;
+  const countQuery = `SELECT COUNT(*) as count ${from} ${whereClause}`;
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
   // Get paginated results
-  const query = `SELECT * FROM MOVIES ${whereClause} ${movieOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
+  const query = `SELECT MOVIES.*, ${udColumns('MOVIES')} ${from} ${whereClause} ${movieOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
   const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
 
   const rows = db.prepare(query).all(...paginatedParams) as MovieRow[];
@@ -425,8 +496,8 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   if (filters.language !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
-      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
+      JOIN EPISODES ep ON ep.SEASONID = se.ID
+      WHERE se.SERIESID = SERIES.ID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
     )`;
     params.push(filters.language);
   }
@@ -439,14 +510,14 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   if (filters.format !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
-      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND ep.FORMAT = ?
+      JOIN EPISODES ep ON ep.SEASONID = se.ID
+      WHERE se.SERIESID = SERIES.ID AND ep.FORMAT = ?
     )`;
     params.push(filters.format);
   }
 
   if (filters.score !== undefined) {
-    whereClause += ` AND SCORE = ?`;
+    whereClause += ` AND ${ud('SCORE')} = ?`;
     params.push(filters.score);
   }
 
@@ -456,12 +527,12 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   }
 
   if (filters.animeseason) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESEASON LIKE ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.ID AND se.ANIMESEASON LIKE ?)`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESTUDIO LIKE ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.ID AND se.ANIMESTUDIO LIKE ?)`;
     params.push(`%${filters.animestudio}%`);
   }
 
@@ -471,7 +542,7 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   }
 
   if (filters.tags !== undefined) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(${ud('TAGS')}) WHERE value = ?)`;
     params.push(filters.tags);
   }
 
@@ -479,12 +550,14 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
     whereClause += seriesViewedClause(filters.viewed);
   }
 
+  const from = `FROM SERIES ${udJoin('SERIES', 'SERIES')}`;
+
   // Get total count
-  const countQuery = `SELECT COUNT(*) as count FROM SERIES ${whereClause}`;
+  const countQuery = `SELECT COUNT(*) as count ${from} ${whereClause}`;
   const totalCount = (db.prepare(countQuery).get(...params) as { count: number }).count;
 
   // Get paginated results
-  const query = `SELECT * FROM SERIES ${whereClause} ${seriesOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
+  const query = `SELECT SERIES.*, ${udColumns('SERIES')} ${from} ${whereClause} ${seriesOrderBy(filters.sort, authenticated)} LIMIT ? OFFSET ?`;
   const paginatedParams = [...params, PAGE_SIZE + 1, page * PAGE_SIZE];
 
   const rows = db.prepare(query).all(...paginatedParams) as SeriesRow[];
@@ -492,11 +565,11 @@ export function getSeries(filters: FilterParams, page: number, authenticated = f
   const items = rows.slice(0, PAGE_SIZE);
 
   // Get aggregated data for each series
-  const seriesIds = items.map((s) => s.LOCALID);
+  const seriesIds = items.map((s) => s.ID);
   const aggregates = getSeriesAggregates(seriesIds, authenticated);
 
   return {
-    items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated)),
+    items: items.map((row) => seriesRowToMediaItem(row, aggregates.get(row.ID), authenticated)),
     hasMore,
     totalCount
   };
@@ -558,7 +631,7 @@ function getAllMoviesUnpaginated(filters: FilterParams, authenticated = false): 
   }
 
   if (filters.score !== undefined) {
-    whereClause += ` AND SCORE = ?`;
+    whereClause += ` AND ${ud('SCORE')} = ?`;
     params.push(filters.score);
   }
 
@@ -588,7 +661,7 @@ function getAllMoviesUnpaginated(filters: FilterParams, authenticated = false): 
   }
 
   if (filters.tags !== undefined) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(${ud('TAGS')}) WHERE value = ?)`;
     params.push(filters.tags);
   }
 
@@ -596,7 +669,7 @@ function getAllMoviesUnpaginated(filters: FilterParams, authenticated = false): 
     whereClause += movieViewedClause(filters.viewed);
   }
 
-  const query = `SELECT * FROM MOVIES ${whereClause} ORDER BY ADDDATE DESC`;
+  const query = `SELECT MOVIES.*, ${udColumns('MOVIES')} FROM MOVIES ${udJoin('MOVIES', 'MOVIES')} ${whereClause} ORDER BY ADDDATE DESC`;
   const rows = db.prepare(query).all(...params) as MovieRow[];
 
   return rows.map((row) => movieRowToMediaItem(row, authenticated));
@@ -621,8 +694,8 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
   if (filters.language !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
-      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
+      JOIN EPISODES ep ON ep.SEASONID = se.ID
+      WHERE se.SERIESID = SERIES.ID AND EXISTS (SELECT 1 FROM json_each(ep.LANGUAGE) WHERE value = ?)
     )`;
     params.push(filters.language);
   }
@@ -635,14 +708,14 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
   if (filters.format !== undefined) {
     whereClause += ` AND EXISTS (
       SELECT 1 FROM SEASONS se
-      JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
-      WHERE se.SERIESID = SERIES.LOCALID AND ep.FORMAT = ?
+      JOIN EPISODES ep ON ep.SEASONID = se.ID
+      WHERE se.SERIESID = SERIES.ID AND ep.FORMAT = ?
     )`;
     params.push(filters.format);
   }
 
   if (filters.score !== undefined) {
-    whereClause += ` AND SCORE = ?`;
+    whereClause += ` AND ${ud('SCORE')} = ?`;
     params.push(filters.score);
   }
 
@@ -652,12 +725,12 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
   }
 
   if (filters.animeseason) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESEASON LIKE ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.ID AND se.ANIMESEASON LIKE ?)`;
     params.push(`%${filters.animeseason}%`);
   }
 
   if (filters.animestudio) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.LOCALID AND se.ANIMESTUDIO LIKE ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM SEASONS se WHERE se.SERIESID = SERIES.ID AND se.ANIMESTUDIO LIKE ?)`;
     params.push(`%${filters.animestudio}%`);
   }
 
@@ -667,7 +740,7 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
   }
 
   if (filters.tags !== undefined) {
-    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(TAGS) WHERE value = ?)`;
+    whereClause += ` AND EXISTS (SELECT 1 FROM json_each(${ud('TAGS')}) WHERE value = ?)`;
     params.push(filters.tags);
   }
 
@@ -675,17 +748,17 @@ function getAllSeriesUnpaginated(filters: FilterParams, authenticated = false): 
     whereClause += seriesViewedClause(filters.viewed);
   }
 
-  const query = `SELECT * FROM SERIES ${whereClause} ORDER BY NAME ASC`;
+  const query = `SELECT SERIES.*, ${udColumns('SERIES')} FROM SERIES ${udJoin('SERIES', 'SERIES')} ${whereClause} ORDER BY NAME ASC`;
   const rows = db.prepare(query).all(...params) as SeriesRow[];
 
   // Get aggregated data for all series
-  const seriesIds = rows.map((s) => s.LOCALID);
+  const seriesIds = rows.map((s) => s.ID);
   const aggregates = getSeriesAggregates(seriesIds, authenticated);
 
-  return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.LOCALID), authenticated));
+  return rows.map((row) => seriesRowToMediaItem(row, aggregates.get(row.ID), authenticated));
 }
 
-function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<number, SeriesAggregate> {
+function getSeriesAggregates(seriesIds: string[], authenticated = false): Map<string, SeriesAggregate> {
   if (seriesIds.length === 0) return new Map();
 
   const db = getDb();
@@ -694,8 +767,11 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
   // Watch stats are only needed when authenticated. Compute them per-episode within the single
   // GROUP BY pass (O(episodes)); the old per-series subqueries re-scanned every episode for every
   // series (O(series × episodes)), which was the dominant cost on large libraries.
-  const epMinWatch = `(SELECT MIN(je.value) FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
-  const epMaxWatch = `(SELECT MAX(je.value) FROM json_each(CASE WHEN json_valid(ep.VIEWED_HISTORY) THEN ep.VIEWED_HISTORY ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  const epHistory = ud('VIEWED_HISTORY', 'epud');
+  const epWatch = (fn: 'MIN' | 'MAX') =>
+    `(SELECT ${fn}(je.value) FROM json_each(CASE WHEN json_valid(${epHistory}) THEN ${epHistory} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  const epMinWatch = epWatch('MIN');
+  const epMaxWatch = epWatch('MAX');
   const watchCols = authenticated
     ? `,
       SUM(CASE WHEN ${epMinWatch} IS NOT NULL THEN 1 ELSE 0 END) as watchedCount,
@@ -709,8 +785,8 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
   const query = `
     SELECT
       se.SERIESID,
-      COUNT(DISTINCT se.LOCALID) as seasonCount,
-      COUNT(ep.LOCALID) as episodeCount,
+      COUNT(DISTINCT se.ID) as seasonCount,
+      COUNT(ep.ID) as episodeCount,
       SUM(ep.LENGTH) as totalLength,
       SUM(ep.FILESIZE) as totalFilesize,
       MIN(se.SEASONYEAR) as minYear,
@@ -720,13 +796,14 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
       GROUP_CONCAT(DISTINCT NULLIF(se.ANIMESTUDIO, '')) as animeStudios,
       MAX(ep.ADDDATE) as lastAddDate${watchCols}
     FROM SEASONS se
-    LEFT JOIN EPISODES ep ON ep.SEASONID = se.LOCALID
+    LEFT JOIN EPISODES ep ON ep.SEASONID = se.ID
+    ${udJoin('EPISODES', 'ep', 'epud')}
     WHERE se.SERIESID IN (${placeholders})
     GROUP BY se.SERIESID
   `;
 
   const rows = db.prepare(query).all(...seriesIds) as {
-    SERIESID: number;
+    SERIESID: string;
     seasonCount: number;
     episodeCount: number;
     watchedCount: number;
@@ -742,7 +819,7 @@ function getSeriesAggregates(seriesIds: number[], authenticated = false): Map<nu
     lastAddDate: string;
   }[];
 
-  const result = new Map<number, SeriesAggregate>();
+  const result = new Map<string, SeriesAggregate>();
   for (const row of rows) {
     // Combine all per-episode language arrays (each ep.LANGUAGE is a JSON int array).
     // GROUP_CONCAT joins them with ',', so wrapping in [] yields a JSON array of arrays.
@@ -808,7 +885,7 @@ function flattenConcatJsonStrings(concat: string | null): string[] {
 
 function movieRowToMediaItem(row: MovieRow, authenticated = false): MediaItem {
   const item: MediaItem = {
-    id: row.LOCALID,
+    id: row.ID,
     type: 'movie',
     name: row.NAME,
     coverId: row.COVERID,
@@ -848,7 +925,7 @@ function movieRowToMediaItem(row: MovieRow, authenticated = false): MediaItem {
 
 function seriesRowToMediaItem(row: SeriesRow, aggregate?: SeriesAggregate, authenticated = false): MediaItem {
   const item: MediaItem = {
-    id: row.LOCALID,
+    id: row.ID,
     type: 'series',
     name: row.NAME,
     coverId: row.COVERID,
@@ -959,15 +1036,16 @@ function extractChecksums(row: Record<string, unknown>): Checksums {
   };
 }
 
-export function getCover(id: number): Buffer | null {
+export function getCover(id: string): Buffer | null {
   const db = getDb();
   const row = db.prepare('SELECT PREVIEW FROM COVERS WHERE ID = ?').get(id) as { PREVIEW: Buffer } | undefined;
   return row?.PREVIEW || null;
 }
 
-export function getMovie(id: number): MediaItem | null {
+export function getMovie(id: string): MediaItem | null {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM MOVIES WHERE LOCALID = ?').get(id) as MovieRow | undefined;
+  const query = `SELECT MOVIES.*, ${udColumns('MOVIES')} FROM MOVIES ${udJoin('MOVIES', 'MOVIES')} WHERE MOVIES.ID = ?`;
+  const row = db.prepare(query).get(id) as MovieRow | undefined;
   if (!row) return null;
   const item = movieRowToMediaItem(row);
   const raw = row as unknown as Record<string, unknown>;
@@ -979,9 +1057,9 @@ export function getMovie(id: number): MediaItem | null {
 }
 
 export interface EpisodeDetail {
-  id: number;
-  seasonId: number;
-  seriesId: number;
+  id: string;
+  seasonId: string;
+  seriesId: string;
   seriesName: string;
   seasonName: string;
   seasonYear: number | null;
@@ -1000,28 +1078,29 @@ export interface EpisodeDetail {
   checksums: Checksums;
 }
 
-export function getEpisode(id: number): EpisodeDetail | null {
+export function getEpisode(id: string): EpisodeDetail | null {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT ep.*,
+      `SELECT ep.*, ${udColumns('EPISODES')},
               se.NAME AS SEASON_NAME,
               se.SEASONYEAR AS SEASON_YEAR,
               se.SERIESID AS SERIES_ID,
               sr.NAME AS SERIES_NAME
        FROM EPISODES ep
-       JOIN SEASONS se ON se.LOCALID = ep.SEASONID
-       JOIN SERIES sr ON sr.LOCALID = se.SERIESID
-       WHERE ep.LOCALID = ?`
+       ${udJoin('EPISODES', 'ep')}
+       JOIN SEASONS se ON se.ID = ep.SEASONID
+       JOIN SERIES sr ON sr.ID = se.SERIESID
+       WHERE ep.ID = ?`
     )
     .get(id) as
-    | (EpisodeRow & { SEASON_NAME: string; SEASON_YEAR: number | null; SERIES_ID: number; SERIES_NAME: string })
+    | (EpisodeRow & { SEASON_NAME: string; SEASON_YEAR: number | null; SERIES_ID: string; SERIES_NAME: string })
     | undefined;
   if (!row) return null;
 
   const raw = row as unknown as Record<string, unknown>;
   return {
-    id: row.LOCALID,
+    id: row.ID,
     seasonId: row.SEASONID,
     seriesId: row.SERIES_ID,
     seriesName: row.SERIES_NAME,
@@ -1043,9 +1122,10 @@ export function getEpisode(id: number): EpisodeDetail | null {
   };
 }
 
-export function getSeriesById(id: number): MediaItem | null {
+export function getSeriesById(id: string): MediaItem | null {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM SERIES WHERE LOCALID = ?').get(id) as SeriesRow | undefined;
+  const query = `SELECT SERIES.*, ${udColumns('SERIES')} FROM SERIES ${udJoin('SERIES', 'SERIES')} WHERE SERIES.ID = ?`;
+  const row = db.prepare(query).get(id) as SeriesRow | undefined;
   if (!row) return null;
 
   const aggregates = getSeriesAggregates([id]);
@@ -1054,14 +1134,18 @@ export function getSeriesById(id: number): MediaItem | null {
   return item;
 }
 
-export function getSeriesSeasons(seriesId: number): SeasonRow[] {
+export function getSeriesSeasons(seriesId: string): SeasonRow[] {
   const db = getDb();
-  return db.prepare('SELECT * FROM SEASONS WHERE SERIESID = ? ORDER BY SEASONYEAR ASC, NAME ASC').all(seriesId) as SeasonRow[];
+  const query = `SELECT SEASONS.*, ${udColumns('SEASONS')} FROM SEASONS ${udJoin('SEASONS', 'SEASONS')}
+                 WHERE SEASONS.SERIESID = ? ORDER BY SEASONYEAR ASC, NAME ASC`;
+  return db.prepare(query).all(seriesId) as SeasonRow[];
 }
 
-export function getSeasonEpisodes(seasonId: number): EpisodeRow[] {
+export function getSeasonEpisodes(seasonId: string): EpisodeRow[] {
   const db = getDb();
-  return db.prepare('SELECT * FROM EPISODES WHERE SEASONID = ? ORDER BY EPISODE ASC').all(seasonId) as EpisodeRow[];
+  const query = `SELECT EPISODES.*, ${udColumns('EPISODES')} FROM EPISODES ${udJoin('EPISODES', 'EPISODES')}
+                 WHERE EPISODES.SEASONID = ? ORDER BY EPISODE ASC`;
+  return db.prepare(query).all(seasonId) as EpisodeRow[];
 }
 
 export function getGroups(): GroupRow[] {

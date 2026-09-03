@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { coverId, isSeries = false, alt = '' }: { coverId: number; isSeries?: boolean; alt?: string } = $props();
+  let { coverId, isSeries = false, alt = '' }: { coverId: string; isSeries?: boolean; alt?: string } = $props();
 
   let loaded = $state(false);
 

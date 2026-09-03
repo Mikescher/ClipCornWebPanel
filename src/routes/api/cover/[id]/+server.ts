@@ -2,14 +2,14 @@ import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getCover } from '$lib/server/queries';
 import { decodeCover } from '$lib/server/cover-decoder';
+import { isValidId } from '$lib/utils/id';
 
 export const GET: RequestHandler = async ({ params }) => {
-  const id = parseInt(params.id);
-  if (isNaN(id)) {
+  if (!isValidId(params.id)) {
     throw error(400, 'Invalid cover ID');
   }
 
-  const coverData = getCover(id);
+  const coverData = getCover(params.id);
   if (!coverData) {
     throw error(404, 'Cover not found');
   }

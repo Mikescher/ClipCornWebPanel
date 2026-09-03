@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getSeriesById, getSeriesSeasons, getSeasonEpisodes, type SeasonRow, type EpisodeRow } from '$lib/server/queries';
+import { isValidId } from '$lib/utils/id';
 
 export interface SeasonWithEpisodes extends SeasonRow {
   episodes: EpisodeRow[];
@@ -9,12 +10,11 @@ export interface SeasonWithEpisodes extends SeasonRow {
 }
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-  const id = parseInt(params.id);
-  if (isNaN(id)) {
+  if (!isValidId(params.id)) {
     throw error(400, 'Invalid series ID');
   }
 
-  const series = getSeriesById(id);
+  const series = getSeriesById(params.id);
   if (!series) {
     throw error(404, 'Series not found');
   }
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   // Personal data must never reach unauthenticated clients.
   delete series.scoreComment;
 
-  const seasons = getSeriesSeasons(id);
+  const seasons = getSeriesSeasons(params.id);
   const seasonsWithEpisodes: SeasonWithEpisodes[] = seasons.map((season) => {
     const seasonComment = (season.SCORECOMMENT ?? '').trim();
     return {
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
       SCORECOMMENT: '',
       hasComment: seasonComment.length > 0,
       comment: locals.authenticated ? seasonComment : null,
-      episodes: getSeasonEpisodes(season.LOCALID).map((ep) =>
+      episodes: getSeasonEpisodes(season.ID).map((ep) =>
         // Personal data must never reach unauthenticated clients (the table doesn't render it anyway).
         locals.authenticated ? ep : { ...ep, VIEWED_HISTORY: '', SCORECOMMENT: '' }
       )

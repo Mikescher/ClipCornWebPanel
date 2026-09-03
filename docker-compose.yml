@@ -7,7 +7,9 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_PATH=/data/ClipCornDB.db
+      - USERDATA_PATH=/data/ClipCornUserData.db
       - NODE_ENV=production
     volumes:
       - ./database.db:/data/ClipCornDB.db:ro
+      - ./userdata.db:/data/ClipCornUserData.db:ro
     restart: unless-stopped
