@@ -22,7 +22,7 @@ A modern SvelteKit web application for browsing a ClipCorn movie/series database
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+ (better-sqlite3 13 requirement; Docker image uses 26)
 - SQLite database file
 
 ### Setup

@@ -1,0 +1,16 @@
+# Host node_modules holds native addons built for the host libc; the image must use its own npm ci.
+node_modules
+build
+.svelte-kit
+
+_run-data
+*.db
+
+.git
+.gitea
+.claude
+.vscode
+.idea
+.env
+.env.*
+*.log
