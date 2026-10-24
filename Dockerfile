@@ -1,6 +1,6 @@
 # Pinned exactly, not a floating tag: node 24.19+ with better-sqlite3 <13 aborts in RemoveEnvironmentCleanupHook.
 # Both stages must match - the native addons are compiled in the builder for the runner's Node ABI.
-FROM node:26.8.2-alpine AS builder
+FROM node:26.12.1-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:26.8.2-alpine AS runner
+FROM node:26.12.1-alpine AS runner
 
 WORKDIR /app
 
