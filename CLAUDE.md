@@ -60,7 +60,7 @@ sentinel. Route params are validated with `isValidId()` from `$lib/utils/id.ts` 
 
 4. **Tags/SpecialVersion/AnimeSeason/AnimeStudio**: JSON arrays stored as strings. Parse with `JSON.parse()`. Note: `AnimeSeason`/`AnimeStudio` live on the `MOVIES` table for movies, but on the `SEASONS` table for series (not `SERIES`) — series-level values are aggregated over all their seasons in `getSeriesAggregates()`. `Tags` lives in the userdata database.
 
-5. **Viewed History**: Comma-separated format: `"UNSPECIFIED,2017-06-17 21:29:00,2022-02-26 15:51:00"`. The "UNSPECIFIED" value should be filtered out.
+5. **Viewed History**: JSON array of `{d, c}` objects (datetime + free-text comment, e.g. "Kino"): `[{"d":"UNSPECIFIED","c":""},{"d":"2017-06-17 21:29:00","c":"Kino"}]`. Only this format (user-data DB v4) is supported: `getDb()` refuses any other `userdata.INFO.VERSION_DB`, and `parseViewedHistory()` / the SQL helpers in `queries.ts` (`WATCH_DATE`, `watchEntries()`) throw on anything else. The "UNSPECIFIED" value should be filtered out.
 
 6. **Covers**: Custom binary format decoded in `cover-decoder.ts`:
    - Byte 0: width

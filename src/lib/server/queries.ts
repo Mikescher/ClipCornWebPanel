@@ -197,10 +197,17 @@ function udColumns(table: UdTable, alias = 'ud'): string {
   return UD_COLUMNS[table].map((c) => `${ud(c, alias)} AS ${c}`).join(', ');
 }
 
+// VIEWED_HISTORY is [{"d":"<datetime>","c":"<comment>"}, ...] (user-data DB v4). json_each throws on
+// malformed JSON and json_extract on a pre-v4 plain-string entry - both are meant to fail loudly.
+const WATCH_DATE = `json_extract(je.value, '$.d')`;
+
+function watchEntries(history: string): string {
+  return `json_each(${history}) je`;
+}
+
 // Watched = at least one VIEWED_HISTORY entry that isn't the 'UNSPECIFIED' placeholder.
-// json_valid guards against empty/malformed JSON (json_each would otherwise throw).
 function watched(history: string): string {
-  return `EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  return `EXISTS (SELECT 1 FROM ${watchEntries(history)} WHERE ${WATCH_DATE} <> 'UNSPECIFIED')`;
 }
 
 /** The episodes of the correlated SERIES row, joined to their user data as `epud`. */
@@ -248,12 +255,12 @@ function seriesViewedClause(viewed?: string): string {
 // Watch timestamps stored as "YYYY-MM-DD HH:MM:SS" sort lexically = chronologically.
 function movieWatchExtreme(fn: 'MIN' | 'MAX'): string {
   const history = ud('VIEWED_HISTORY');
-  return `(SELECT ${fn}(je.value) FROM json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  return `(SELECT ${fn}(${WATCH_DATE}) FROM ${watchEntries(history)} WHERE ${WATCH_DATE} <> 'UNSPECIFIED')`;
 }
 
 function seriesWatchExtreme(fn: 'MIN' | 'MAX'): string {
   const history = ud('VIEWED_HISTORY', 'epud');
-  return `(SELECT ${fn}(je.value) ${seriesEpisodesFrom()}, json_each(CASE WHEN json_valid(${history}) THEN ${history} ELSE '[]' END) je WHERE se.SERIESID = SERIES.ID AND je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+  return `(SELECT ${fn}(${WATCH_DATE}) ${seriesEpisodesFrom()}, ${watchEntries(history)} WHERE se.SERIESID = SERIES.ID AND ${WATCH_DATE} <> 'UNSPECIFIED')`;
 }
 
 // COALESCE to -1 so unrated items sort below any real score (first in ASC, last in DESC).
@@ -769,7 +776,7 @@ function getSeriesAggregates(seriesIds: string[], authenticated = false): Map<st
   // series (O(series × episodes)), which was the dominant cost on large libraries.
   const epHistory = ud('VIEWED_HISTORY', 'epud');
   const epWatch = (fn: 'MIN' | 'MAX') =>
-    `(SELECT ${fn}(je.value) FROM json_each(CASE WHEN json_valid(${epHistory}) THEN ${epHistory} ELSE '[]' END) je WHERE je.value <> 'UNSPECIFIED' AND je.value <> '')`;
+    `(SELECT ${fn}(${WATCH_DATE}) FROM ${watchEntries(epHistory)} WHERE ${WATCH_DATE} <> 'UNSPECIFIED')`;
   const epMinWatch = epWatch('MIN');
   const epMaxWatch = epWatch('MAX');
   const watchCols = authenticated
@@ -915,7 +922,7 @@ function movieRowToMediaItem(row: MovieRow, authenticated = false): MediaItem {
     const { viewed, history } = parseViewedHistory(row.VIEWED_HISTORY);
     if (viewed) {
       item.watchedState = 'full';
-      const sorted = [...history].sort();
+      const sorted = history.map((e) => e.date).sort();
       item.firstWatched = sorted[0];
       item.lastWatched = sorted[sorted.length - 1];
     }

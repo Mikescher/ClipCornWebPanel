@@ -126,7 +126,7 @@
           <h2>Watch History</h2>
           <ul class="history-list">
             {#each data.viewedHistory as watched}
-              <li>{watched}</li>
+              <li>{watched.date}{#if watched.comment}<span class="history-comment">{watched.comment}</span>{/if}</li>
             {/each}
           </ul>
         </div>
@@ -304,6 +304,12 @@
     border-radius: 6px;
     font-size: 0.85rem;
     color: #cbd5e1;
+  }
+
+  .history-comment {
+    margin-left: 0.5rem;
+    color: #94a3b8;
+    font-style: italic;
   }
 
   @media (min-width: 640px) {

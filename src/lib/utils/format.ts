@@ -105,22 +105,34 @@ export function formatLengthShort(mins: number): string {
   return `${hours}h ${minutes}m`;
 }
 
+export interface ViewedEntry {
+  /** "UNSPECIFIED", "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" */
+  date: string;
+  /** Free text, e.g. "Kino"; empty when there is none */
+  comment: string;
+}
+
 /**
- * Parse viewed history (JSON array of SQL datetime strings)
- * Format: ["UNSPECIFIED","2017-06-17 21:29:00","2022-02-26 15:51:00"]
+ * Parse viewed history (userdata VIEWED_HISTORY, user-data DB v4):
+ * [{"d":"UNSPECIFIED","c":""},{"d":"2017-06-17 21:29:00","c":"Kino"}]
+ * Throws on anything else. 'UNSPECIFIED' entries are left out of `history`.
  */
-export function parseViewedHistory(value: string): { viewed: boolean; history: string[] } {
-  if (!value || value === '') {
+export function parseViewedHistory(value: string): { viewed: boolean; history: ViewedEntry[] } {
+  if (value === '') {
+    // the redacted value of an unauthenticated client
     return { viewed: false, history: [] };
   }
-  let parts: string[];
-  try {
-    const parsed = JSON.parse(value);
-    parts = Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
-    parts = [];
+  const parsed: unknown = JSON.parse(value);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Invalid VIEWED_HISTORY (not an array): ${value}`);
   }
-  const history = parts.filter((p) => p !== 'UNSPECIFIED' && p !== '');
+  const entries = parsed.map((e): ViewedEntry => {
+    if (typeof e !== 'object' || e === null || typeof e.d !== 'string' || typeof e.c !== 'string') {
+      throw new Error(`Invalid VIEWED_HISTORY entry ${JSON.stringify(e)} in ${value}`);
+    }
+    return { date: e.d, comment: e.c };
+  });
+  const history = entries.filter((e) => e.date !== 'UNSPECIFIED');
   return {
     viewed: history.length > 0,
     history

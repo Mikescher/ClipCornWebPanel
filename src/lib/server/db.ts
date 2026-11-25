@@ -10,6 +10,9 @@ const DATABASE_PATH = env.DATABASE_PATH ?? '/data/ClipCornDB.db';
 // synced, so a panel fed only the shared file legitimately runs without it.
 const USERDATA_PATH = env.USERDATA_PATH ?? join(dirname(DATABASE_PATH), 'ClipCornUserData.db');
 
+// The only user-data schema the queries understand (v4: VIEWED_HISTORY entries are {"d","c"} objects).
+const SUPPORTED_USERDATA_VERSION = '4';
+
 // SQL query logging is on unless LOG_SQL is explicitly set to "false"/"0".
 const LOG_SQL = env.LOG_SQL !== 'false' && env.LOG_SQL !== '0';
 
@@ -88,7 +91,14 @@ export function getDb(): Database.Database {
   if (!db) {
     const raw = new Database(DATABASE_PATH, { readonly: true, fileMustExist: true });
     // An attached database inherits the read-only flag of the main connection.
-    if (userStat) raw.prepare('ATTACH DATABASE ? AS userdata').run(USERDATA_PATH);
+    if (userStat) {
+      raw.prepare('ATTACH DATABASE ? AS userdata').run(USERDATA_PATH);
+      const row = raw.prepare(`SELECT IVALUE FROM userdata.INFO WHERE IKEY = 'VERSION_DB'`).get() as { IVALUE: string } | undefined;
+      if (row?.IVALUE !== SUPPORTED_USERDATA_VERSION) {
+        raw.close();
+        throw new Error(`Unsupported ClipCornUserData.db version ${row?.IVALUE ?? '(none)'} (expected ${SUPPORTED_USERDATA_VERSION}): ${USERDATA_PATH}`);
+      }
+    }
     userDataAttached = userStat !== null;
     db = LOG_SQL ? instrument(raw) : raw;
     lastMtime = stat.mtimeMs;
